@@ -335,6 +335,17 @@ a:hover {
   background: rgba(245, 196, 196, 0.85) !important;
   transform: scale(1.02) !important;
 }
+/* ===== 针对手机竖屏，调整背景图显示位置 ===== */
+@media screen and (max-width: 768px) {
+  body {
+    /* 
+    原来的位置是 center，现在改成 25% 50% 
+    25% 表示图片水平位置往左靠，数值越小越靠左（显示图片左侧）
+    50% 表示垂直居中不变
+    */
+    background-position: 20% 50% !important;
+  }
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/sakura-js@1.1.1/dist/sakura.min.js"></script>
 <script>
