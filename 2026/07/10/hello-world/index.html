@@ -299,19 +299,15 @@ a:hover {
   border-radius: 16px !important;
   box-shadow: 0 4px 20px rgba(200, 160, 180, 0.10) !important;
 }
-/* ===== 首页标题区域透明（去掉默认蓝色） ===== */
-#page-header {
-  background: transparent !important;
-  box-shadow: none !important;
-}
-#page-header:before {
-  background: transparent !important;
-}
+/* ===== 首页标题区域透明 ===== */
+#page-header, 
+#page-header:before,
 .page-header,
-.not-home-page #page-header {
-  background: rgba(255, 248, 248, 0.25) !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
+.not-home-page #page-header,
+.post #page-header {
+  background-image: none !important;          /* 关键：去掉图片 */
+  background: transparent !important;         /* 清除所有背景 */
+  background-color: transparent !important;   /* 确保颜色透明 */
 }
 /* ===== 右侧边栏 "Follow Me" 按钮 ===== */
 .author-info__sayhi .btn,
