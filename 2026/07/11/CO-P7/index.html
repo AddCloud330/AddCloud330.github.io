@@ -1,0 +1,445 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>P7-异常中断和外设 | Echoes of the Cloud</title><meta name="author" content="AddCloud"><meta name="copyright" content="AddCloud"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="ffffff"><meta name="description" content="新增模块 CP0CP0协处理器内置寄存器：各寄存器位域如下：CP0模块的端口定义： 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475&#96;define SR_IM SR[">
+<meta property="og:type" content="article">
+<meta property="og:title" content="P7-异常中断和外设">
+<meta property="og:url" content="https://addcloud330.github.io/2026/07/11/CO-P7/index.html">
+<meta property="og:site_name" content="Echoes of the Cloud">
+<meta property="og:description" content="新增模块 CP0CP0协处理器内置寄存器：各寄存器位域如下：CP0模块的端口定义： 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475&#96;define SR_IM SR[">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://addcloud330.github.io/img/avatar.png">
+<meta property="article:published_time" content="2026-07-11T10:10:51.000Z">
+<meta property="article:modified_time" content="2026-07-11T11:52:44.989Z">
+<meta property="article:author" content="AddCloud">
+<meta property="article:tag" content="CO">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://addcloud330.github.io/img/avatar.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "P7-异常中断和外设",
+  "url": "https://addcloud330.github.io/2026/07/11/CO-P7/",
+  "image": "https://addcloud330.github.io/img/avatar.png",
+  "datePublished": "2026-07-11T10:10:51.000Z",
+  "dateModified": "2026-07-11T11:52:44.989Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "AddCloud",
+      "url": "https://AddCloud330.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://addcloud330.github.io/2026/07/11/CO-P7/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'P7-异常中断和外设',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@200;300;400;600&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Echoes of the Cloud</span></a><a class="nav-page-title" href="/"><span class="site-name">P7-异常中断和外设</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">P7-异常中断和外设</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-07-11T11:52:44.989Z" title="更新于 2026-07-11 19:52:44">2026-07-11</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%AF%BE%E7%A8%8B/">课程</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h2 id="新增模块"><a href="#新增模块" class="headerlink" title="新增模块"></a>新增模块</h2><hr>
+<h3 id="CP0"><a href="#CP0" class="headerlink" title="CP0"></a>CP0</h3><p>CP0协处理器内置寄存器：<br><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/CP0%E5%AF%84%E5%AD%98%E5%99%A8%E5%AE%9A%E4%B9%89.png" alt="CP0寄存器定义"><br>各寄存器位域如下：<br><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/CP0%E5%AF%84%E5%AD%98%E5%99%A8%E4%BD%8D%E5%9F%9F.png" alt="CP0寄存器位域"><br>CP0模块的端口定义：<br><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/CP0%E7%AB%AF%E5%8F%A3%E5%AE%9A%E4%B9%89.png" alt="CP0端口定义"></p>
+<figure class="highlight verilog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">`<span class="keyword">define</span> SR_IM SR[15:10]</span></span><br><span class="line"><span class="meta">`<span class="keyword">define</span> SR_EXL SR[1]</span></span><br><span class="line"><span class="meta">`<span class="keyword">define</span> SR_IE SR[0]</span></span><br><span class="line"><span class="meta">`<span class="keyword">define</span> Cause_BD Cause[31]</span></span><br><span class="line"><span class="meta">`<span class="keyword">define</span> Cause_IP Cause[15:10]</span></span><br><span class="line"><span class="meta">`<span class="keyword">define</span> Cause_ExcCode Cause[6:2]</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">parameter</span> sr = <span class="number">5&#x27;h0c</span>;</span><br><span class="line"><span class="keyword">parameter</span> cause = <span class="number">5&#x27;h0d</span>;</span><br><span class="line"><span class="keyword">parameter</span> epc = <span class="number">5&#x27;h0e</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">module</span> CP0(</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> clk,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> reset,</span><br><span class="line"></span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> en,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">4</span>:<span class="number">0</span>] RegAddr,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] RegWD,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] RegRD,</span><br><span class="line"></span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] VPC,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> BD,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">4</span>:<span class="number">0</span>] ExcCode,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">5</span>:<span class="number">0</span>] HWInt,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> EXLClr,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] EPCOut,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> Req</span><br><span class="line">    );</span><br><span class="line"> </span><br><span class="line"><span class="keyword">reg</span> [<span class="number">31</span>:<span class="number">0</span>] SR,Cause,EPC;</span><br><span class="line"></span><br><span class="line"><span class="keyword">always</span> @(<span class="keyword">posedge</span> clk) <span class="keyword">begin</span></span><br><span class="line">  <span class="keyword">if</span>(reset) <span class="keyword">begin</span></span><br><span class="line">    SR &lt;= <span class="number">32&#x27;h00000000</span>;</span><br><span class="line">    Cause &lt;= <span class="number">32&#x27;h00000000</span>;</span><br><span class="line">    EPC &lt;= <span class="number">32&#x27;h00000000</span>;</span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">begin</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span>(en &amp;&amp; ~Req)<span class="keyword">begin</span></span><br><span class="line">        <span class="keyword">if</span>(RegAddr == sr)<span class="keyword">begin</span></span><br><span class="line">          SR &lt;= RegWD;</span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span>(RegAddr == epc)<span class="keyword">begin</span></span><br><span class="line">          EPC &lt;= RegWD;</span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(Req)<span class="keyword">begin</span></span><br><span class="line">      `SR_EXL &lt;= <span class="number">1&#x27;b1</span>;</span><br><span class="line">      `Cause_BD &lt;= BD;</span><br><span class="line">      `Cause_ExcCode &lt;= (~`SR_EXL &amp;&amp; (`SR_IE &amp;&amp; (`SR_IM &amp; HWInt) != <span class="number">6&#x27;h00</span>)) ? <span class="number">5&#x27;h00</span> : ExcCode;</span><br><span class="line">      EPC &lt;= (BD) ? (VPC - <span class="number">4</span>) : VPC ;</span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"> </span><br><span class="line">    <span class="keyword">if</span>(EXLClr)<span class="keyword">begin</span></span><br><span class="line">      `SR_EXL &lt;= <span class="number">1&#x27;b0</span>;</span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"> </span><br><span class="line">    `Cause_IP &lt;= HWInt;</span><br><span class="line"> </span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">assign</span> RegRD = (RegAddr == sr) ? SR :</span><br><span class="line">               (RegAddr == cause) ? Cause :</span><br><span class="line">               (RegAddr == epc) ? EPC :</span><br><span class="line">               <span class="number">32&#x27;h00000000</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">assign</span> EPCOut = EPC;</span><br><span class="line"></span><br><span class="line"><span class="comment">// (not in core at present) and ((something wrong inside) || (interrupt outside))</span></span><br><span class="line"><span class="keyword">assign</span> Req = (~`SR_EXL &amp;&amp; ((ExcCode != <span class="number">5&#x27;h00</span>) || (`SR_IE &amp;&amp; (`SR_IM &amp; HWInt) != <span class="number">6&#x27;h00</span>)));</span><br><span class="line"></span><br><span class="line"><span class="keyword">endmodule</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="系统桥和外设"><a href="#系统桥和外设" class="headerlink" title="系统桥和外设"></a>系统桥和外设</h3><p><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/structure.svg" alt="架构图"></p>
+<figure class="highlight verilog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">module</span> Bridge(</span><br><span class="line">    <span class="comment">//link to CPU</span></span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] CPU_macroscopic_pc,</span><br><span class="line"></span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] CPU_i_inst_addr,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] CPU_i_inst_rdata,</span><br><span class="line"></span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] CPU_m_data_addr,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] CPU_m_data_rdata,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] CPU_m_data_wdata,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">3</span>:<span class="number">0</span>] CPU_m_data_byteen,</span><br><span class="line"></span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] CPU_m_inst_addr,</span><br><span class="line"></span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> CPU_w_grf_we,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">4</span>:<span class="number">0</span>] CPU_w_grf_addr,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] CPU_w_grf_wdata, </span><br><span class="line"></span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] CPU_w_inst_addr,</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">5</span>:<span class="number">0</span>] CPU_HWInt,</span><br><span class="line"> </span><br><span class="line">    <span class="comment">//link to time0</span></span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">2</span>] t0_Addr,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> t0_WE,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] t0_Din,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] t0_Dout,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> t0_IRQ,</span><br><span class="line"> </span><br><span class="line">    <span class="comment">//link to time1</span></span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">2</span>] t1_Addr,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> t1_WE,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] t1_Din,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] t1_Dout,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> t1_IRQ,</span><br><span class="line"> </span><br><span class="line">    <span class="comment">//link to mips</span></span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> interrupt, </span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] macroscopic_pc,</span><br><span class="line"></span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] i_inst_addr,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] i_inst_rdata,</span><br><span class="line"></span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] m_data_addr,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] m_data_rdata,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] m_data_wdata,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">3</span>:<span class="number">0</span>] m_data_byteen,</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] m_int_addr,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">3</span>:<span class="number">0</span>] m_int_byteen,</span><br><span class="line"></span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] m_inst_addr,</span><br><span class="line"></span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> w_grf_we,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">4</span>:<span class="number">0</span>] w_grf_addr,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] w_grf_wdata, </span><br><span class="line"></span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] w_inst_addr</span><br><span class="line">    );</span><br><span class="line"> </span><br><span class="line"><span class="keyword">wire</span> isDM,ist0,ist1,isinter;</span><br><span class="line"><span class="keyword">assign</span> isDM = (CPU_m_data_addr &gt;= <span class="number">32&#x27;h00000000</span> &amp;&amp; CPU_m_data_addr &lt; <span class="number">32&#x27;h00003000</span>);</span><br><span class="line"><span class="comment">//assign isIM = (CPU_m_data_addr &gt;= 32&#x27;h00003000) &amp;&amp; (CPU_m_data_addr &lt; 32&#x27;h00007000);</span></span><br><span class="line"><span class="keyword">assign</span> ist0 = (CPU_m_data_addr &gt;= <span class="number">32&#x27;h00007f00</span>) &amp;&amp; (CPU_m_data_addr &lt;= <span class="number">32&#x27;h00007f0b</span>);</span><br><span class="line"><span class="keyword">assign</span> ist1 = (CPU_m_data_addr &gt;= <span class="number">32&#x27;h00007f10</span>) &amp;&amp; (CPU_m_data_addr &lt;= <span class="number">32&#x27;h00007f1b</span>);</span><br><span class="line"><span class="keyword">assign</span> isinter = (CPU_m_data_addr &gt;= <span class="number">32&#x27;h00007f20</span>) &amp;&amp; (CPU_m_data_addr &lt;= <span class="number">32&#x27;h00007f23</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">assign</span> macroscopic_pc = CPU_macroscopic_pc;</span><br><span class="line"><span class="keyword">assign</span> i_inst_addr = CPU_i_inst_addr;</span><br><span class="line"><span class="keyword">assign</span> CPU_i_inst_rdata = i_inst_rdata;</span><br><span class="line"></span><br><span class="line"><span class="keyword">assign</span> m_inst_addr = CPU_m_inst_addr;</span><br><span class="line"></span><br><span class="line"><span class="keyword">assign</span> m_data_addr = CPU_m_data_addr;</span><br><span class="line"><span class="keyword">assign</span> m_data_wdata = CPU_m_data_wdata;</span><br><span class="line"><span class="keyword">assign</span> m_data_byteen = (isDM) ? (CPU_m_data_byteen) : <span class="number">4&#x27;h0</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">assign</span> m_int_addr = CPU_m_data_addr;</span><br><span class="line"><span class="keyword">assign</span> m_int_byteen = (isinter) ? (CPU_m_data_byteen) : <span class="number">4&#x27;h0</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">assign</span> w_grf_we = CPU_w_grf_we;</span><br><span class="line"><span class="keyword">assign</span> w_grf_addr = CPU_w_grf_addr;</span><br><span class="line"><span class="keyword">assign</span> w_grf_wdata = CPU_w_grf_wdata;</span><br><span class="line"><span class="keyword">assign</span> w_inst_addr = CPU_w_inst_addr;</span><br><span class="line"></span><br><span class="line"><span class="keyword">assign</span> CPU_HWInt = &#123;<span class="number">3&#x27;b000</span>,interrupt,t1_IRQ,t0_IRQ&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">assign</span> t1_Addr = CPU_m_data_addr[<span class="number">31</span>:<span class="number">2</span>];</span><br><span class="line"><span class="keyword">assign</span> t1_WE = (ist1) ? ~(CPU_m_data_byteen == <span class="number">4&#x27;h0</span>) : <span class="number">1&#x27;b0</span>; </span><br><span class="line"><span class="keyword">assign</span> t1_Din = CPU_m_data_wdata;</span><br><span class="line"></span><br><span class="line"><span class="keyword">assign</span> t0_Addr = CPU_m_data_addr[<span class="number">31</span>:<span class="number">2</span>];</span><br><span class="line"><span class="keyword">assign</span> t0_WE = (ist0) ? ~(CPU_m_data_byteen == <span class="number">4&#x27;h0</span>) : <span class="number">1&#x27;b0</span>; </span><br><span class="line"><span class="keyword">assign</span> t0_Din = CPU_m_data_wdata;</span><br><span class="line"></span><br><span class="line"><span class="keyword">assign</span> CPU_m_data_rdata = (isDM) ? m_data_rdata :</span><br><span class="line">                          (ist0) ? t0_Dout :</span><br><span class="line">                          (ist1) ? t1_Dout :</span><br><span class="line">                          (isinter) ? <span class="number">32&#x27;h00000000</span> :</span><br><span class="line">                          <span class="number">32&#x27;h00000000</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">endmodule</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="异常检测"><a href="#异常检测" class="headerlink" title="异常检测"></a>异常检测</h3><figure class="highlight verilog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//CPU_F_Stage</span></span><br><span class="line"><span class="keyword">assign</span> F_Wrong = ~(F_PC[<span class="number">1</span>:<span class="number">0</span>] == <span class="number">2&#x27;b00</span> &amp;&amp; (F_PC &gt;= <span class="number">32&#x27;h00003000</span> &amp;&amp; F_PC &lt;= <span class="number">32&#x27;h00006ffc</span>));</span><br><span class="line"><span class="keyword">assign</span> F_ExcCode = (F_Wrong) ? <span class="number">5&#x27;b00100</span> :</span><br><span class="line">                   <span class="number">5&#x27;b00000</span>;</span><br><span class="line"><span class="keyword">assign</span> F_fixed_Instr = (F_Wrong) ? <span class="number">32&#x27;h00000000</span> :</span><br><span class="line">                       F_Instr;</span><br><span class="line"></span><br><span class="line"><span class="comment">//CPU_D_Stage</span></span><br><span class="line"><span class="keyword">assign</span> D_fixed_ExcCode = (D_ExcCode != <span class="number">5&#x27;h00</span>) ? D_ExcCode :</span><br><span class="line">                         (D_type == <span class="number">6&#x27;h20</span>) ? <span class="number">5&#x27;b01000</span> :</span><br><span class="line">                         (D_type == <span class="number">6&#x27;h3f</span>) ? <span class="number">5&#x27;b01010</span> :</span><br><span class="line">                         <span class="number">5&#x27;b00000</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//CPU_E_Stage</span></span><br><span class="line"><span class="keyword">wire</span> E_islw,E_islh,E_islb,E_issw,E_issh,E_issb;</span><br><span class="line"><span class="keyword">assign</span> E_islw = (E_type == <span class="number">6&#x27;h0d</span>);</span><br><span class="line"><span class="keyword">assign</span> E_islh = (E_type == <span class="number">6&#x27;h0c</span>);</span><br><span class="line"><span class="keyword">assign</span> E_islb = (E_type == <span class="number">6&#x27;h0b</span>);</span><br><span class="line"><span class="keyword">assign</span> E_issw = (E_type == <span class="number">6&#x27;h10</span>);</span><br><span class="line"><span class="keyword">assign</span> E_issh = (E_type == <span class="number">6&#x27;h0f</span>);</span><br><span class="line"><span class="keyword">assign</span> E_issb = (E_type == <span class="number">6&#x27;h0e</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">wire</span> E_AdEL1,E_AdEL2,E_AdEL3,E_AdEL4,beyran;</span><br><span class="line"><span class="keyword">assign</span> E_AdEL1 = (E_islw &amp;&amp; E_ALUOut[<span class="number">1</span>:<span class="number">0</span>] != <span class="number">2&#x27;b00</span>);</span><br><span class="line"><span class="keyword">assign</span> E_AdEL2 = (E_islh &amp;&amp; E_ALUOut[<span class="number">0</span>] != <span class="number">1&#x27;b0</span>);</span><br><span class="line"><span class="keyword">assign</span> E_AdEL3 = ((E_islh || E_islb) &amp;&amp; ((E_ALUOut &gt;= <span class="number">32&#x27;h00007f00</span> &amp;&amp; E_ALUOut &lt;= <span class="number">32&#x27;h00007f0b</span>)||(E_ALUOut &gt;= <span class="number">32&#x27;h00007f10</span> &amp;&amp; E_ALUOut &lt;= <span class="number">32&#x27;h00007f1b</span>)));</span><br><span class="line"><span class="keyword">assign</span> beyran = ~((E_ALUOut &gt;= <span class="number">32&#x27;h00007f00</span> &amp;&amp; E_ALUOut &lt;= <span class="number">32&#x27;h00007f0b</span>)||(E_ALUOut &gt;= <span class="number">32&#x27;h00007f10</span> &amp;&amp; E_ALUOut &lt;= <span class="number">32&#x27;h00007f1b</span>)||</span><br><span class="line">(E_ALUOut &gt;= <span class="number">32&#x27;h00000000</span> &amp;&amp; E_ALUOut &lt; <span class="number">32&#x27;h00003000</span>)||(E_ALUOut &gt;= <span class="number">32&#x27;h00007f20</span> &amp;&amp; E_ALUOut &lt;= <span class="number">32&#x27;h00007f23</span>));</span><br><span class="line"><span class="keyword">assign</span> E_AdEL4 = ((E_islw || E_islh || E_islb) &amp;&amp; (E_addOverflow || beyran));</span><br><span class="line"><span class="keyword">assign</span> E_AdEL = E_AdEL1||E_AdEL2||E_AdEL3||E_AdEL4;</span><br><span class="line"></span><br><span class="line"><span class="keyword">wire</span> E_AdES1,E_AdES2,E_AdES3,E_AdES4,E_AdES5;</span><br><span class="line"><span class="keyword">assign</span> E_AdES1 = (E_issw &amp;&amp; E_ALUOut[<span class="number">1</span>:<span class="number">0</span>] != <span class="number">2&#x27;b00</span>);</span><br><span class="line"><span class="keyword">assign</span> E_AdES2 = (E_issh &amp;&amp; E_ALUOut[<span class="number">0</span>] != <span class="number">1&#x27;b0</span>);</span><br><span class="line"><span class="keyword">assign</span> E_AdES3 = ((E_issh || E_issb) &amp;&amp; ((E_ALUOut &gt;= <span class="number">32&#x27;h00007f00</span> &amp;&amp; E_ALUOut &lt;= <span class="number">32&#x27;h00007f0b</span>)||(E_ALUOut &gt;= <span class="number">32&#x27;h00007f10</span> &amp;&amp; E_ALUOut &lt;= <span class="number">32&#x27;h00007f1b</span>)));</span><br><span class="line"><span class="keyword">assign</span> E_AdES4 = ((E_issw || E_issh || E_issb) &amp;&amp; (E_addOverflow || beyran));</span><br><span class="line"><span class="keyword">assign</span> E_AdES5 = ((E_issw || E_issh || E_issb) &amp;&amp; (E_ALUOut == <span class="number">32&#x27;h00007f08</span> || E_ALUOut == <span class="number">32&#x27;h00007f18</span>));</span><br><span class="line"><span class="keyword">assign</span> E_AdES = E_AdES1||E_AdES2||E_AdES3||E_AdES4||E_AdES5;</span><br><span class="line"></span><br><span class="line"><span class="keyword">wire</span> E_overflow;</span><br><span class="line"><span class="keyword">assign</span> E_overflow = ((E_type == <span class="number">6&#x27;h01</span> || E_type == <span class="number">6&#x27;h07</span>) &amp;&amp; E_addOverflow)||</span><br><span class="line">                  (E_type == <span class="number">6&#x27;h02</span> &amp;&amp; E_subOverflow);</span><br><span class="line"></span><br><span class="line"><span class="keyword">assign</span> E_fixed_ExcCode = (E_ExcCode != <span class="number">5&#x27;b00000</span>) ? E_ExcCode :</span><br><span class="line">                         (E_AdEL) ? <span class="number">5&#x27;b00100</span> :</span><br><span class="line">                         (E_AdES) ? <span class="number">5&#x27;b00101</span> :</span><br><span class="line">                         (E_overflow) ? <span class="number">5&#x27;b01100</span> :</span><br><span class="line">                         <span class="number">5&#x27;b00000</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">//CPU_M_Stage</span></span><br><span class="line">CP0 CP01(</span><br><span class="line">  <span class="variable">.clk</span>(clk),</span><br><span class="line">  <span class="variable">.reset</span>(reset),</span><br><span class="line">  <span class="variable">.en</span>(M_CP0Write),</span><br><span class="line">  <span class="variable">.RegAddr</span>(M_rd),</span><br><span class="line">  <span class="variable">.RegWD</span>(M_fixed_RD2),</span><br><span class="line">  <span class="variable">.RegRD</span>(M_CP0RD),</span><br><span class="line">  <span class="variable">.VPC</span>(M_PC),</span><br><span class="line">  <span class="variable">.BD</span>(M_BD),</span><br><span class="line">  <span class="variable">.ExcCode</span>(M_fixed_ExcCode),</span><br><span class="line">  <span class="variable">.HWInt</span>(HWInt),</span><br><span class="line">  <span class="variable">.EXLClr</span>(M_isEret),</span><br><span class="line">  <span class="variable">.EPCOut</span>(EPC),</span><br><span class="line">  <span class="variable">.Req</span>(Req)</span><br><span class="line">);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="测试方案"><a href="#测试方案" class="headerlink" title="测试方案"></a>测试方案</h2><figure class="highlight mips"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">lui </span>$<span class="built_in">t1</span>,<span class="number">0x7fff</span></span><br><span class="line"><span class="keyword">ori </span>$<span class="built_in">t1</span>,<span class="number">0xffff</span></span><br><span class="line"><span class="keyword">ori </span>$<span class="built_in">t2</span>,<span class="number">0x0001</span></span><br><span class="line"><span class="keyword">add </span>$<span class="built_in">t3</span>,$<span class="built_in">t1</span>,$<span class="built_in">t2</span></span><br><span class="line"><span class="keyword">lui </span>$<span class="built_in">s1</span>,<span class="number">0x8000</span></span><br><span class="line"><span class="keyword">addi </span>$<span class="built_in">s2</span>,$<span class="built_in">zero</span>,-<span class="number">100</span></span><br><span class="line"><span class="keyword">sub </span>$<span class="built_in">s3</span>,$<span class="built_in">s1</span>,$<span class="built_in">s2</span></span><br><span class="line"><span class="keyword">lw </span>$<span class="number">1</span>, <span class="number">1</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">lh </span>$<span class="number">2</span>, <span class="number">1</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">lh </span>$<span class="number">3</span>, <span class="number">0x7f00</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">lb </span>$<span class="number">4</span>, <span class="number">0x7f10</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">addi </span>$<span class="number">5</span>, $<span class="number">0</span>, <span class="number">0x7fffffff</span></span><br><span class="line"><span class="keyword">lw </span>$<span class="number">6</span>, <span class="number">0</span>($<span class="number">5</span>)</span><br><span class="line"><span class="keyword">lb </span>$<span class="number">7</span>, <span class="number">0x8000</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">sw </span>$<span class="number">8</span>, <span class="number">1</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">sh </span>$<span class="number">9</span>, <span class="number">1</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">sh </span>$<span class="number">10</span>, <span class="number">0x7f00</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">sb </span>$<span class="number">11</span>, <span class="number">0x7f10</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">addi </span>$<span class="number">12</span>, $<span class="number">0</span>, <span class="number">0x7fffffff</span></span><br><span class="line"><span class="keyword">sw </span>$<span class="number">13</span>, <span class="number">0</span>($<span class="number">12</span>)</span><br><span class="line"><span class="keyword">sb </span>$<span class="number">14</span>, <span class="number">0x8000</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">sw </span>$<span class="number">15</span>, <span class="number">0x7f08</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">sh </span>$<span class="number">16</span>, <span class="number">0x7f18</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">j </span><span class="number">0x12345671</span></span><br><span class="line"><span class="keyword">jal </span><span class="number">0x76543212</span></span><br><span class="line"><span class="keyword">jr </span>$<span class="number">17</span></span><br><span class="line"><span class="keyword">addi </span>$<span class="number">17</span>, $<span class="number">0</span>, <span class="number">0x98765433</span></span><br><span class="line"><span class="keyword">jr </span>$<span class="number">17</span></span><br><span class="line"><span class="keyword">nop</span></span><br><span class="line"><span class="keyword"></span><span class="keyword">nop</span></span><br><span class="line"><span class="keyword"></span><span class="keyword">nop</span></span><br><span class="line"><span class="keyword"></span>···</span><br><span class="line">//<span class="keyword">nop </span>until <span class="number">0x00004180</span></span><br><span class="line"><span class="keyword">mfc0 </span>$<span class="built_in">k0</span>, $<span class="number">14</span></span><br><span class="line"><span class="keyword">add </span>$<span class="built_in">k0</span>, $<span class="built_in">k0</span>, <span class="number">4</span></span><br><span class="line"><span class="keyword">mtc0 </span>$<span class="built_in">k0</span>, $<span class="number">14</span></span><br><span class="line"><span class="keyword">eret</span></span><br></pre></td></tr></table></figure>
+
+<p>导出机器码，对所设计的微系统进行测试，结果与预期相符，能够识别异常，再用Kie-Chi学长的COT评测机进行测试，也顺利通过。</p>
+<h2 id="思考题汇总"><a href="#思考题汇总" class="headerlink" title="思考题汇总"></a>思考题汇总</h2><hr>
+<blockquote>
+<p>1.请查阅相关资料，说明鼠标和键盘的输入信号是如何被 CPU 知晓的？</p>
+</blockquote>
+<p>鼠标和键盘等外设不直接与 CPU 相连，中间需通过驱动程序（软件接口） 衔接。<br>鼠标和键盘的操作，会被设备自身电路转换成电信号，再生成对应的硬件中断信号。中断信号先传给中断控制器，再转发给CPU。</p>
+<blockquote>
+<p>2.请思考为什么我们的 CPU 处理中断异常必须是已经指定好的地址？如果你的 CPU 支持用户自定义入口地址，即处理中断异常的程序由用户提供，其还能提供我们所希望的功能吗？如果可以，请说明这样可能会出现什么问题？否则举例说明。（假设用户提供的中断处理程序合法）</p>
+</blockquote>
+<p>指定中断异常处理的地址</p>
+<ul>
+<li>能省去寻址的步骤，实现低延迟响应</li>
+<li>固定地址确保CPU跳转到操作系统预先验证的合法程序，安全性高</li>
+<li>提高了兼容性，不同的操作系统和外设都能基于统一的入口地址开发。</li>
+</ul>
+<p>如果支持用户自定义处理程序，也能实现我们希望的功能，但是会出现很多问题</p>
+<ul>
+<li>用户程序属于用户态代码，而中断处理需要访问内核态资源，产生安全隐患</li>
+<li>用户程序指定的地址可能不是我们预期的，产生访存问题</li>
+<li>如果存在多个用户程序，可能会产生矛盾和混乱</li>
+<li>硬件兼容性差</li>
+</ul>
+<blockquote>
+<p>3.为何与外设通信需要 Bridge？</p>
+</blockquote>
+<p>系统桥是连接CPU和外设的功能设备，可以处理不同外设的不同接口，这样CPU就不需要为每种外设设立不同的接口，只要发挥CPU本身功能即可。这样做符合高内聚低耦合的思想，便于CPU的维护。</p>
+<blockquote>
+<p>4.请阅读官方提供的定时器源代码，阐述两种中断模式的异同，并分别针对每一种模式绘制状态移图。</p>
+</blockquote>
+<p>模式0通常用于产生定时中断，当计数器倒数为0后，计数器停止计数，Ctrl寄存器的计数使能自动变为0，并且中断信号始终保持有效，直到屏蔽中断或重新开始计数。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/Mode0.jpg" alt="Mode0"></p>
+<p>模式1通常用于产生周期性脉冲，当计数器倒计数为0后，初值寄存器值被自动加载至计数器，计数器继续倒计数。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/Mode1.jpg" alt="Mode1"></p>
+<blockquote>
+<p>5.倘若中断信号流入的时候，在检测宏观 PC 的一级如果是一条空泡（你的 CPU 该级所有信息均为空）指令，此时会发生什么问题？在此例基础上请思考：在 P7 中，清空流水线产生的空泡指令应该保留原指令的哪些信息？</p>
+</blockquote>
+<p>如果中断时检测级是全空的空泡指令，会丢失原指令的地址，等到中断处理结束，用eret返回时，找不到返回的地址。因此，清空流水线时应该保留原指令的PC和BD信息。</p>
+<blockquote>
+<p>6.为什么 jalr 指令为什么不能写成 jalr $31, $31？</p>
+</blockquote>
+<p>因为jalr需将返回地址写入目标寄存器（第一个<code>$31</code>），同时从源寄存器（第二个<code>$31</code>）取跳转地址，会导致返回地址被覆盖，无法正确保存调用前的PC值，破坏函数返回逻辑。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://AddCloud330.github.io">AddCloud</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://addcloud330.github.io/2026/07/11/CO-P7/">https://addcloud330.github.io/2026/07/11/CO-P7/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://AddCloud330.github.io" target="_blank">Echoes of the Cloud</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/CO/">CO</a></div><div class="post-share"><div class="social-share" data-image="/img/avatar.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/07/11/CO-P6/" title="P6-新增功能"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">P6-新增功能</div></div><div class="info-2"><div class="info-item-1">新增模块1. 乘除模块   信号名 方向 描述    clk I 时钟信号   reset I 复位信号   A[31:0] I 第一个运算数   B[31:0] I 第二个运算数   type I 指令类型   C[31:0] O 输出结果   start O 乘除运算开始的标志   busy O 乘除运算正在进行的标志   1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374module MDU(    input wire clk,    input wire reset,    input wire [31:0] A,    input wire [31:0] B,    input wire [4:0] type,    output wire [31:0] C,    output wire start,    output wire busy ...</div></div></div></a><a class="pagination-related" href="/2026/07/11/CO-P3/" title="P3-Logisim单周期CPU"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">P3-Logisim单周期CPU</div></div><div class="info-2"><div class="info-item-1">设计草稿  模块规格1.IFU（取指令单元）（1）模块接口    信号名 方向 描述    clk I 时钟信号   reset I 异步复位信号   nPC_sel I nPC的选择信号（1代表beq指令，0代表其他指令）   zero I beq指令的选择信号（1代表跳转）   ext_imm[31:0] I beq指令的偏移量   PC[31:0] O 输出程序计数器的当前值   Instr[31:0] O 输出下一条指令的32位二进制码   （2）功能定义    序号 功能名称 描述    1 复位 reset信号有效时，PC数值回到初始值（0x00003000）   2 取下一条指令 nPC_sel&#x3D;0（非beq指令）或者zero&#x3D;0时，PC&#x3D;PC+4，Instr顺序取得下一条指令   3 跳转 nPC_sel&#x3D;1（beq指令）且zero&#x3D;0（A&#x3D;B）时，PC&#x3D;PC+4+4*ext_imm，Instr取得跳转地址处的指令，实现跳转   （3）电路实现 2.ALU（计算单元）（1）模块接口    信号名...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/07/11/CO-P6/" title="P6-新增功能"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">P6-新增功能</div></div><div class="info-2"><div class="info-item-1">新增模块1. 乘除模块   信号名 方向 描述    clk I 时钟信号   reset I 复位信号   A[31:0] I 第一个运算数   B[31:0] I 第二个运算数   type I 指令类型   C[31:0] O 输出结果   start O 乘除运算开始的标志   busy O 乘除运算正在进行的标志   1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374module MDU(    input wire clk,    input wire reset,    input wire [31:0] A,    input wire [31:0] B,    input wire [4:0] type,    output wire [31:0] C,    output wire start,    output wire busy ...</div></div></div></a><a class="pagination-related" href="/2026/07/11/CO-P5/" title="P5-Verilog五级流水线CPU"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">P5-Verilog五级流水线CPU</div></div><div class="info-2"><div class="info-item-1">一、设计草稿1.模块与划分将单周期CPU改造为五级流水线CPU，采用分布式译码，划分为F,D,E,M,W五级，各级设立单独的Controller，并在各级间添加流水线寄存器。 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475module Controller(    input wire [5:0] op,    input wire [5:0] funct,    output wire [1:0] RegDst,    output wire ALUSrc,    output wire [1:0] Mem2Reg,    output wire RegWrite,    output wire MemWrite,    output wire [2:0] nPC_sel,    output wire [2:0] ALUOp,    outpu...</div></div></div></a><a class="pagination-related" href="/2026/07/11/CO-P3/" title="P3-Logisim单周期CPU"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">P3-Logisim单周期CPU</div></div><div class="info-2"><div class="info-item-1">设计草稿  模块规格1.IFU（取指令单元）（1）模块接口    信号名 方向 描述    clk I 时钟信号   reset I 异步复位信号   nPC_sel I nPC的选择信号（1代表beq指令，0代表其他指令）   zero I beq指令的选择信号（1代表跳转）   ext_imm[31:0] I beq指令的偏移量   PC[31:0] O 输出程序计数器的当前值   Instr[31:0] O 输出下一条指令的32位二进制码   （2）功能定义    序号 功能名称 描述    1 复位 reset信号有效时，PC数值回到初始值（0x00003000）   2 取下一条指令 nPC_sel&#x3D;0（非beq指令）或者zero&#x3D;0时，PC&#x3D;PC+4，Instr顺序取得下一条指令   3 跳转 nPC_sel&#x3D;1（beq指令）且zero&#x3D;0（A&#x3D;B）时，PC&#x3D;PC+4+4*ext_imm，Instr取得跳转地址处的指令，实现跳转   （3）电路实现 2.ALU（计算单元）（1）模块接口    信号名...</div></div></div></a><a class="pagination-related" href="/2026/07/11/CO-P4/" title="P4-Verilog单周期CPU"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">P4-Verilog单周期CPU</div></div><div class="info-2"><div class="info-item-1">设计草稿 模块规格1.IFU（取指令单元）（1）模块接口    信号名 方向 描述    clk I 时钟信号   reset I 异步复位信号   zero I beq指令的选择信号（1代表跳转）   nPC_sel[2:0] I nPC的选择信号000:非跳转指令001:beq指令010:jal指令011:jr指令   target[25:0] I jal指令的目标[27:2]   ext_imm[31:0] I beq指令的偏移量   jrReg[31:0] I jr指令的目标寄存器中的值   PC[31:0] O 输出程序计数器的当前值   Instr[31:0] O 输出下一条指令的32位二进制码   PCplus4[31:0] O 下一条指令的地址   （2）功能定义    序号 功能名称 条件 操作    1 复位 reset信号有效 PC数值回到初始值（0x00003000）   2 取下一条指令 nPC_sel&#x3D;00或nPC_sel&#x3D;01&amp;&amp;zero&#x3D;0 PC&#x3D;PC+4，Instr顺序取得下一条指令   3...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">AddCloud</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">17</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">3</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">1</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%B0%E5%A2%9E%E6%A8%A1%E5%9D%97"><span class="toc-number">1.</span> <span class="toc-text">新增模块</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#CP0"><span class="toc-number">1.1.</span> <span class="toc-text">CP0</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B3%BB%E7%BB%9F%E6%A1%A5%E5%92%8C%E5%A4%96%E8%AE%BE"><span class="toc-number">1.2.</span> <span class="toc-text">系统桥和外设</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%82%E5%B8%B8%E6%A3%80%E6%B5%8B"><span class="toc-number">1.3.</span> <span class="toc-text">异常检测</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B5%8B%E8%AF%95%E6%96%B9%E6%A1%88"><span class="toc-number">2.</span> <span class="toc-text">测试方案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%80%83%E9%A2%98%E6%B1%87%E6%80%BB"><span class="toc-number">3.</span> <span class="toc-text">思考题汇总</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P4/" title="P4-Verilog单周期CPU">P4-Verilog单周期CPU</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P3/" title="P3-Logisim单周期CPU">P3-Logisim单周期CPU</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P7/" title="P7-异常中断和外设">P7-异常中断和外设</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P6/" title="P6-新增功能">P6-新增功能</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/OO-U1/" title="OO-U1总结">OO-U1总结</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By AddCloud</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"></div><style>
+/* ===== 整体背景 ===== */
+body {
+  background: #FDF5F5 !important;
+  background-image: url('https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/bg.png') !important;
+  background-size: cover !important;
+  background-attachment: fixed !important;
+  background-position: center center !important;
+  background-repeat: no-repeat center;
+}
+/* ===== 针对手机竖屏，重新定位左侧人物 ===== */
+@media screen and (max-width: 768px) {
+  body {
+    /* 调整这个百分比，直到人物脸部完全显示 */
+    background-position: 20% 50% !important;
+  }
+}
+/* ===== 毛玻璃卡片效果 ===== */
+#recent-posts > .recent-post-item,
+.layout > .recent-posts > .recent-post-item,
+.layout > div:not(.recent-posts) {
+  background: rgba(255, 248, 248, 0.55) !important;
+  backdrop-filter: blur(12px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(1.4) !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 8px 32px rgba(200, 160, 180, 0.18) !important;
+  transition: all 0.4s ease !important;
+}
+#recent-posts > .recent-post-item:hover,
+.layout > div:not(.recent-posts):hover {
+  background: rgba(255, 248, 248, 0.70) !important;
+  box-shadow: 0 12px 48px rgba(200, 160, 180, 0.28) !important;
+  transform: translateY(-2px) !important;
+}
+/* ===== 标题文字风格 ===== */
+#site-title {
+  font-family: 'Georgia', 'Noto Serif SC', serif !important;
+  font-weight: 300 !important;
+  letter-spacing: 6px !important;
+  color: #F5E0E0 !important;
+  text-shadow: 0 2px 20px rgba(200, 150, 160, 0.5) !important;
+}
+#site-subtitle {
+  font-family: 'Georgia', 'Noto Serif SC', serif !important;
+  font-weight: 200 !important;
+  letter-spacing: 8px !important;
+  color: rgba(255, 240, 240, 0.85) !important;
+  text-shadow: 0 2px 16px rgba(180, 140, 150, 0.4) !important;
+}
+/* ===== 文章标题 ===== */
+.post-title {
+  font-family: 'Georgia', 'Noto Serif SC', serif !important;
+  font-weight: 400 !important;
+  letter-spacing: 2px !important;
+}
+.post-meta {
+  color: #C8A8B0 !important;
+  font-size: 14px !important;
+}
+/* ===== 链接颜色 ===== */
+a {
+  color: #D4A0A8 !important;
+  transition: color 0.3s ease !important;
+}
+a:hover {
+  color: #E8B0B8 !important;
+}
+/* ===== 侧边栏头像 ===== */
+.avatar-img {
+  border: 3px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 4px 24px rgba(200, 160, 180, 0.3) !important;
+}
+/* ===== 滚动条（浅粉） ===== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 245, 245, 0.6);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #F5C4C4;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E8B0B0;
+}
+/* ===== 选中文字颜色 ===== */
+::selection {
+  background: #F5C4C4 !important;
+  color: #FFFFFF !important;
+}
+/* ===== 顶部导航栏透明毛玻璃 ===== */
+#nav {
+  background: rgba(255, 248, 248, 0.35) !important;
+  backdrop-filter: blur(16px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.4) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 2px 24px rgba(200, 160, 180, 0.08) !important;
+}
+#nav .site-page {
+  color: #F5E8E8 !important;
+  text-shadow: 0 1px 8px rgba(180, 140, 150, 0.3) !important;
+}
+#nav .site-page:hover {
+  color: #FFFFFF !important;
+}
+/* ===== 页脚 ===== */
+#footer {
+  background: rgba(255, 248, 248, 0.30) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #E8D0D0 !important;
+  text-shadow: 0 1px 8px rgba(180, 140, 150, 0.2) !important;
+}
+#footer a {
+  color: #E8C8C8 !important;
+}
+#footer a:hover {
+  color: #F5E0E0 !important;
+}
+/* ===== 代码块圆角柔和 ===== */
+.highlight {
+  border-radius: 16px !important;
+  box-shadow: 0 4px 20px rgba(200, 160, 180, 0.10) !important;
+}
+/* ===== 首页标题区域透明 ===== */
+#page-header, 
+#page-header:before,
+.page-header,
+.not-home-page #page-header,
+.post #page-header {
+  background-image: none !important;          /* 关键：去掉图片 */
+  background: transparent !important;         /* 清除所有背景 */
+  background-color: transparent !important;   /* 确保颜色透明 */
+}
+/* ===== 右侧边栏 "Follow Me" 按钮 ===== */
+.author-info__sayhi .btn,
+#aside-content .card_author .btn {
+  background: rgba(245, 196, 196, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  color: #FFFFFF !important;
+  border-radius: 30px !important;
+  backdrop-filter: blur(4px) !important;
+  box-shadow: 0 2px 12px rgba(200, 160, 180, 0.2) !important;
+  transition: all 0.4s ease !important;
+}
+.author-info__sayhi .btn:hover,
+#aside-content .card_author .btn:hover {
+  background: rgba(245, 196, 196, 0.95) !important;
+  transform: scale(1.04) !important;
+  box-shadow: 0 4px 20px rgba(200, 160, 180, 0.4) !important;
+}
+/* ===== 按钮风格 ===== */
+.btn-beautify {
+  background: rgba(245, 196, 196, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 30px !important;
+  backdrop-filter: blur(4px) !important;
+  color: #FFFFFF !important;
+}
+.btn-beautify:hover {
+  background: rgba(245, 196, 196, 0.85) !important;
+  transform: scale(1.02) !important;
+}
+</style>
+<script>
+(function() {
+  const count = 25;                    // 花瓣数量（减少）
+  const container = document.body;
+  const petalImg = '/img/petal.png';   // 你的单瓣图片路径
+
+  // 注入动画关键帧
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes petalFall {
+      0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.9; }
+      100% { transform: translateY(${window.innerHeight + 120}px) rotate(720deg) scale(0.5); opacity: 0.1; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  function createPetal(index) {
+    const petal = document.createElement('img');
+    // 均匀分布：把 0~100% 分成 count 份，每份的中心点，加上随机偏移 ±4%
+    const baseLeft = (index / count) * 100;
+    const randomOffset = (Math.random() - 0.5) * 8; // -4% ~ +4%
+    const left = Math.min(100, Math.max(0, baseLeft + randomOffset)); // 限制范围
+
+    const size = 22 + Math.random() * 18;     // 22~40px（保持适中）
+    const duration = 12 + Math.random() * 14; // 12~26 秒（更慢）
+    const delay = Math.random() * 10;         // 0~10 秒延迟（更分散）
+    const rotation = Math.random() * 360;
+
+    petal.src = petalImg;
+    petal.style.cssText = `
+      position: fixed;
+      top: -30px;
+      left: ${left}%;
+      width: ${size}px;
+      height: auto;
+      pointer-events: none;
+      z-index: 99999;
+      transform: rotate(${rotation}deg);
+      animation: petalFall ${duration}s linear ${delay}s infinite;
+      opacity: 0.85;
+    `;
+    container.appendChild(petal);
+  }
+
+  // 生成花瓣（按顺序生成，位置均匀分布）
+  for (let i = 0; i < count; i++) {
+    createPetal(i);
+  }
+
+  // 窗口大小变化时更新动画终点
+  window.addEventListener('resize', function() {
+    const existingStyle = document.querySelector('style[data-petal]');
+    if (existingStyle) {
+      existingStyle.textContent = `
+        @keyframes petalFall {
+          0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.9; }
+          100% { transform: translateY(${window.innerHeight + 120}px) rotate(720deg) scale(0.5); opacity: 0.1; }
+        }
+      `;
+    }
+  });
+})();
+</script>
+<script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

@@ -1,0 +1,560 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>P6-新增功能 | Echoes of the Cloud</title><meta name="author" content="AddCloud"><meta name="copyright" content="AddCloud"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="ffffff"><meta name="description" content="新增模块1. 乘除模块   信号名 方向 描述    clk I 时钟信号   reset I 复位信号   A[31:0] I 第一个运算数   B[31:0] I 第二个运算数   type I 指令类型   C[31:0] O 输出结果   start O 乘除运算开始的标志   busy O 乘除运算正在进行的标志   12345678910111213141516171819202122">
+<meta property="og:type" content="article">
+<meta property="og:title" content="P6-新增功能">
+<meta property="og:url" content="https://addcloud330.github.io/2026/07/11/CO-P6/index.html">
+<meta property="og:site_name" content="Echoes of the Cloud">
+<meta property="og:description" content="新增模块1. 乘除模块   信号名 方向 描述    clk I 时钟信号   reset I 复位信号   A[31:0] I 第一个运算数   B[31:0] I 第二个运算数   type I 指令类型   C[31:0] O 输出结果   start O 乘除运算开始的标志   busy O 乘除运算正在进行的标志   12345678910111213141516171819202122">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://addcloud330.github.io/img/avatar.png">
+<meta property="article:published_time" content="2026-07-11T10:10:51.000Z">
+<meta property="article:modified_time" content="2026-07-11T11:41:30.547Z">
+<meta property="article:author" content="AddCloud">
+<meta property="article:tag" content="CO">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://addcloud330.github.io/img/avatar.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "P6-新增功能",
+  "url": "https://addcloud330.github.io/2026/07/11/CO-P6/",
+  "image": "https://addcloud330.github.io/img/avatar.png",
+  "datePublished": "2026-07-11T10:10:51.000Z",
+  "dateModified": "2026-07-11T11:41:30.547Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "AddCloud",
+      "url": "https://AddCloud330.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://addcloud330.github.io/2026/07/11/CO-P6/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'P6-新增功能',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@200;300;400;600&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Echoes of the Cloud</span></a><a class="nav-page-title" href="/"><span class="site-name">P6-新增功能</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">P6-新增功能</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-07-11T11:41:30.547Z" title="更新于 2026-07-11 19:41:30">2026-07-11</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%AF%BE%E7%A8%8B/">课程</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h2 id="新增模块"><a href="#新增模块" class="headerlink" title="新增模块"></a>新增模块</h2><h3 id="1-乘除模块"><a href="#1-乘除模块" class="headerlink" title="1. 乘除模块"></a>1. 乘除模块</h3><table>
+<thead>
+<tr>
+<th align="center">信号名</th>
+<th align="center">方向</th>
+<th align="center">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">clk</td>
+<td align="center">I</td>
+<td align="center">时钟信号</td>
+</tr>
+<tr>
+<td align="center">reset</td>
+<td align="center">I</td>
+<td align="center">复位信号</td>
+</tr>
+<tr>
+<td align="center">A[31:0]</td>
+<td align="center">I</td>
+<td align="center">第一个运算数</td>
+</tr>
+<tr>
+<td align="center">B[31:0]</td>
+<td align="center">I</td>
+<td align="center">第二个运算数</td>
+</tr>
+<tr>
+<td align="center">type</td>
+<td align="center">I</td>
+<td align="center">指令类型</td>
+</tr>
+<tr>
+<td align="center">C[31:0]</td>
+<td align="center">O</td>
+<td align="center">输出结果</td>
+</tr>
+<tr>
+<td align="center">start</td>
+<td align="center">O</td>
+<td align="center">乘除运算开始的标志</td>
+</tr>
+<tr>
+<td align="center">busy</td>
+<td align="center">O</td>
+<td align="center">乘除运算正在进行的标志</td>
+</tr>
+</tbody></table>
+<figure class="highlight verilog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">module</span> MDU(</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> clk,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> reset,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] A,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] B,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">4</span>:<span class="number">0</span>] <span class="keyword">type</span>,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] C,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> start,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> busy</span><br><span class="line">    );</span><br><span class="line"></span><br><span class="line"><span class="keyword">parameter</span> mult = <span class="number">5&#x27;h15</span>;</span><br><span class="line"><span class="keyword">parameter</span> multu = <span class="number">5&#x27;h16</span>;</span><br><span class="line"><span class="keyword">parameter</span> div = <span class="number">5&#x27;h17</span>;</span><br><span class="line"><span class="keyword">parameter</span> divu = <span class="number">5&#x27;h18</span>;</span><br><span class="line"><span class="keyword">parameter</span> mfhi = <span class="number">5&#x27;h19</span>;</span><br><span class="line"><span class="keyword">parameter</span> mflo = <span class="number">5&#x27;h1a</span>;</span><br><span class="line"><span class="keyword">parameter</span> mthi = <span class="number">5&#x27;h1b</span>;</span><br><span class="line"><span class="keyword">parameter</span> mtlo = <span class="number">5&#x27;h1c</span>;</span><br><span class="line"> </span><br><span class="line"><span class="keyword">reg</span> [<span class="number">31</span>:<span class="number">0</span>] HI,LO;</span><br><span class="line"><span class="keyword">reg</span> [<span class="number">4</span>:<span class="number">0</span>] count;</span><br><span class="line"> </span><br><span class="line"><span class="keyword">always</span> @(<span class="keyword">posedge</span> clk) <span class="keyword">begin</span></span><br><span class="line">  <span class="keyword">if</span>(reset)<span class="keyword">begin</span></span><br><span class="line">    HI &lt;= <span class="number">32&#x27;h00000000</span>;</span><br><span class="line">    LO &lt;= <span class="number">32&#x27;h00000000</span>;</span><br><span class="line">    count &lt;= <span class="number">5&#x27;h00</span>;</span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">begin</span></span><br><span class="line">    <span class="keyword">if</span>(busy == <span class="number">1&#x27;b0</span>)<span class="keyword">begin</span></span><br><span class="line">       <span class="keyword">case</span>(<span class="keyword">type</span>)</span><br><span class="line">         mult:<span class="keyword">begin</span></span><br><span class="line">           &#123;HI,LO&#125; &lt;= <span class="built_in">$signed</span>(A)*<span class="built_in">$signed</span>(B);</span><br><span class="line">           count &lt;= <span class="number">5&#x27;h05</span>;</span><br><span class="line">         <span class="keyword">end</span></span><br><span class="line">         multu:<span class="keyword">begin</span></span><br><span class="line">           &#123;HI,LO&#125; &lt;= A*B;</span><br><span class="line">           count &lt;= <span class="number">5&#x27;h05</span>;</span><br><span class="line">         <span class="keyword">end</span></span><br><span class="line">         div:<span class="keyword">begin</span></span><br><span class="line">           <span class="keyword">if</span>(B != <span class="number">32&#x27;h00000000</span>)<span class="keyword">begin</span></span><br><span class="line">             LO &lt;= <span class="built_in">$signed</span>(A)/<span class="built_in">$signed</span>(B);</span><br><span class="line">             HI &lt;= <span class="built_in">$signed</span>(A)%<span class="built_in">$signed</span>(B);</span><br><span class="line">             count &lt;= <span class="number">5&#x27;h0a</span>;</span><br><span class="line">           <span class="keyword">end</span></span><br><span class="line">         <span class="keyword">end</span></span><br><span class="line">         divu:<span class="keyword">begin</span></span><br><span class="line">           <span class="keyword">if</span>(B != <span class="number">32&#x27;h00000000</span>) <span class="keyword">begin</span></span><br><span class="line">             LO &lt;= A/B;</span><br><span class="line">             HI &lt;= A%B;</span><br><span class="line">             count &lt;= <span class="number">5&#x27;h0a</span>;</span><br><span class="line">           <span class="keyword">end</span></span><br><span class="line">         <span class="keyword">end</span></span><br><span class="line">         mthi:</span><br><span class="line">           HI &lt;= A;</span><br><span class="line">         mtlo:</span><br><span class="line">           LO &lt;= A;</span><br><span class="line">         <span class="keyword">default</span>:;</span><br><span class="line">       <span class="keyword">endcase</span></span><br><span class="line">     <span class="keyword">end</span></span><br><span class="line">     <span class="keyword">if</span>(count != <span class="number">0</span>)<span class="keyword">begin</span></span><br><span class="line">       count &lt;= count - <span class="number">1</span>;</span><br><span class="line">     <span class="keyword">end</span> </span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">assign</span> start = (<span class="keyword">type</span> == mult) || (<span class="keyword">type</span> == multu) || (<span class="keyword">type</span> == div) || (<span class="keyword">type</span> == divu);</span><br><span class="line"><span class="keyword">assign</span> busy = (count != <span class="number">5&#x27;h00</span>);</span><br><span class="line"><span class="keyword">assign</span> C = (<span class="keyword">type</span> == mfhi) ? HI :</span><br><span class="line">           (<span class="keyword">type</span> == mflo) ? LO :</span><br><span class="line">           <span class="number">32&#x27;h00000000</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">endmodule</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="2-BE"><a href="#2-BE" class="headerlink" title="2. BE"></a>2. BE</h3><table>
+<thead>
+<tr>
+<th align="center">信号名</th>
+<th align="center">方向</th>
+<th align="center">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">addr[31:0]</td>
+<td align="center">I</td>
+<td align="center">待写入数据的地址</td>
+</tr>
+<tr>
+<td align="center">DIn[31:0]</td>
+<td align="center">I</td>
+<td align="center">待截取的数据</td>
+</tr>
+<tr>
+<td align="center">type[4:0]</td>
+<td align="center">I</td>
+<td align="center">写入数据的指令类型</td>
+</tr>
+<tr>
+<td align="center">byeen[3:0]</td>
+<td align="center">O</td>
+<td align="center">写入数据的使能信号</td>
+</tr>
+<tr>
+<td align="center">DOut[31:0]</td>
+<td align="center">O</td>
+<td align="center">待写入的数据</td>
+</tr>
+</tbody></table>
+<figure class="highlight verilog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">module</span> BE(</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span>[<span class="number">31</span>:<span class="number">0</span>] addr,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span>[<span class="number">31</span>:<span class="number">0</span>] DIn,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span>[<span class="number">4</span>:<span class="number">0</span>] <span class="keyword">type</span>,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span>[<span class="number">3</span>:<span class="number">0</span>] byteen,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] DOut</span><br><span class="line">    );</span><br><span class="line"> </span><br><span class="line"><span class="keyword">parameter</span> sb = <span class="number">5&#x27;h0e</span>;</span><br><span class="line"><span class="keyword">parameter</span> sh = <span class="number">5&#x27;h0f</span>;</span><br><span class="line"><span class="keyword">parameter</span> sw = <span class="number">5&#x27;h10</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">wire</span> [<span class="number">7</span>:<span class="number">0</span>] d1,d2,d3,d4;</span><br><span class="line"><span class="keyword">assign</span> d1 = DIn[<span class="number">7</span>:<span class="number">0</span>];</span><br><span class="line"><span class="keyword">assign</span> d2 = DIn[<span class="number">15</span>:<span class="number">8</span>];</span><br><span class="line"><span class="keyword">assign</span> d3 = DIn[<span class="number">23</span>:<span class="number">16</span>];</span><br><span class="line"><span class="keyword">assign</span> d4 = DIn[<span class="number">31</span>:<span class="number">24</span>];</span><br><span class="line"></span><br><span class="line"><span class="keyword">assign</span> byteen = (<span class="keyword">type</span> == sb &amp;&amp; addr[<span class="number">1</span>:<span class="number">0</span>] == <span class="number">2&#x27;b00</span>) ? <span class="number">4&#x27;b0001</span> : </span><br><span class="line">                (<span class="keyword">type</span> == sb &amp;&amp; addr[<span class="number">1</span>:<span class="number">0</span>] == <span class="number">2&#x27;b01</span>) ? <span class="number">4&#x27;b0010</span> : </span><br><span class="line">                (<span class="keyword">type</span> == sb &amp;&amp; addr[<span class="number">1</span>:<span class="number">0</span>] == <span class="number">2&#x27;b10</span>) ? <span class="number">4&#x27;b0100</span> : </span><br><span class="line">                (<span class="keyword">type</span> == sb &amp;&amp; addr[<span class="number">1</span>:<span class="number">0</span>] == <span class="number">2&#x27;b11</span>) ? <span class="number">4&#x27;b1000</span> : </span><br><span class="line">                (<span class="keyword">type</span> == sh &amp;&amp; addr[<span class="number">1</span>] == <span class="number">1&#x27;b0</span>) ? <span class="number">4&#x27;b0011</span> : </span><br><span class="line">                (<span class="keyword">type</span> == sh &amp;&amp; addr[<span class="number">1</span>] == <span class="number">1&#x27;b1</span>) ? <span class="number">4&#x27;b1100</span> : </span><br><span class="line">                (<span class="keyword">type</span> == sw) ? <span class="number">4&#x27;b1111</span> : </span><br><span class="line">                <span class="number">4&#x27;b0000</span>;</span><br><span class="line"> </span><br><span class="line"><span class="keyword">assign</span> DOut = (<span class="keyword">type</span> == sb &amp;&amp; addr[<span class="number">1</span>:<span class="number">0</span>] == <span class="number">2&#x27;b00</span>) ? &#123;<span class="number">24&#x27;h000000</span>,d1&#125; : </span><br><span class="line">              (<span class="keyword">type</span> == sb &amp;&amp; addr[<span class="number">1</span>:<span class="number">0</span>] == <span class="number">2&#x27;b01</span>) ? &#123;<span class="number">16&#x27;h0000</span>,d1,<span class="number">8&#x27;h00</span>&#125; : </span><br><span class="line">              (<span class="keyword">type</span> == sb &amp;&amp; addr[<span class="number">1</span>:<span class="number">0</span>] == <span class="number">2&#x27;b10</span>) ? &#123;<span class="number">8&#x27;h00</span>,d1,<span class="number">16&#x27;h0000</span>&#125; : </span><br><span class="line">              (<span class="keyword">type</span> == sb &amp;&amp; addr[<span class="number">1</span>:<span class="number">0</span>] == <span class="number">2&#x27;b11</span>) ? &#123;d1,<span class="number">24&#x27;h000000</span>&#125; : </span><br><span class="line">              (<span class="keyword">type</span> == sh &amp;&amp; addr[<span class="number">1</span>] == <span class="number">1&#x27;b0</span>) ? &#123;<span class="number">16&#x27;h0000</span>,d2,d1&#125; : </span><br><span class="line">              (<span class="keyword">type</span> == sh &amp;&amp; addr[<span class="number">1</span>] == <span class="number">1&#x27;b1</span>) ? &#123;d2,d1,<span class="number">16&#x27;h0000</span>&#125; : </span><br><span class="line">              (<span class="keyword">type</span> == sw) ? DIn : </span><br><span class="line">              <span class="number">32&#x27;h00000000</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">endmodule</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-DE"><a href="#3-DE" class="headerlink" title="3. DE"></a>3. DE</h3><table>
+<thead>
+<tr>
+<th align="center">信号名</th>
+<th align="center">方向</th>
+<th align="center">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">type[4:0]</td>
+<td align="center">I</td>
+<td align="center">读取数据的指令类型</td>
+</tr>
+<tr>
+<td align="center">DIn[31:0]</td>
+<td align="center">I</td>
+<td align="center">读取的字节数据</td>
+</tr>
+<tr>
+<td align="center">addr[31:0]</td>
+<td align="center">I</td>
+<td align="center">读取数据的地址</td>
+</tr>
+<tr>
+<td align="center">DOut[31:0]</td>
+<td align="center">O</td>
+<td align="center">读取并截取的数据</td>
+</tr>
+</tbody></table>
+<figure class="highlight verilog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">module</span> DE(</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">4</span>:<span class="number">0</span>] <span class="keyword">type</span>,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] DIn,</span><br><span class="line">    <span class="keyword">input</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] addr,</span><br><span class="line">    <span class="keyword">output</span> <span class="keyword">wire</span> [<span class="number">31</span>:<span class="number">0</span>] DOut</span><br><span class="line">    );</span><br><span class="line"></span><br><span class="line"><span class="keyword">parameter</span> lb = <span class="number">5&#x27;h0b</span>;</span><br><span class="line"><span class="keyword">parameter</span> lh = <span class="number">5&#x27;h0c</span>;</span><br><span class="line"><span class="keyword">parameter</span> lw = <span class="number">5&#x27;h0d</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">wire</span> [<span class="number">7</span>:<span class="number">0</span>] d1,d2,d3,d4;</span><br><span class="line"><span class="keyword">assign</span> d1 = DIn[<span class="number">7</span>:<span class="number">0</span>];</span><br><span class="line"><span class="keyword">assign</span> d2 = DIn[<span class="number">15</span>:<span class="number">8</span>];</span><br><span class="line"><span class="keyword">assign</span> d3 = DIn[<span class="number">23</span>:<span class="number">16</span>];</span><br><span class="line"><span class="keyword">assign</span> d4 = DIn[<span class="number">31</span>:<span class="number">24</span>];</span><br><span class="line"></span><br><span class="line"><span class="keyword">assign</span> DOut = (<span class="keyword">type</span> == lb &amp;&amp; addr[<span class="number">1</span>:<span class="number">0</span>] == <span class="number">2&#x27;b00</span>) ? &#123;&#123;<span class="number">24</span>&#123;d1[<span class="number">7</span>]&#125;&#125;,d1&#125; : </span><br><span class="line">              (<span class="keyword">type</span> == lb &amp;&amp; addr[<span class="number">1</span>:<span class="number">0</span>] == <span class="number">2&#x27;b01</span>) ? &#123;&#123;<span class="number">24</span>&#123;d2[<span class="number">7</span>]&#125;&#125;,d2&#125; : </span><br><span class="line">              (<span class="keyword">type</span> == lb &amp;&amp; addr[<span class="number">1</span>:<span class="number">0</span>] == <span class="number">2&#x27;b10</span>) ? &#123;&#123;<span class="number">24</span>&#123;d3[<span class="number">7</span>]&#125;&#125;,d3&#125; : </span><br><span class="line">              (<span class="keyword">type</span> == lb &amp;&amp; addr[<span class="number">1</span>:<span class="number">0</span>] == <span class="number">2&#x27;b11</span>) ? &#123;&#123;<span class="number">24</span>&#123;d4[<span class="number">7</span>]&#125;&#125;,d4&#125; : </span><br><span class="line">              (<span class="keyword">type</span> == lh &amp;&amp; addr[<span class="number">1</span>] == <span class="number">1&#x27;b0</span>) ? &#123;&#123;<span class="number">16</span>&#123;d2[<span class="number">7</span>]&#125;&#125;,d2,d1&#125; : </span><br><span class="line">              (<span class="keyword">type</span> == lh &amp;&amp; addr[<span class="number">1</span>] == <span class="number">1&#x27;b1</span>) ? &#123;&#123;<span class="number">16</span>&#123;d4[<span class="number">7</span>]&#125;&#125;,d4,d3&#125; : </span><br><span class="line">              (<span class="keyword">type</span> == lw) ? DIn : </span><br><span class="line">              <span class="number">32&#x27;h00000000</span>;</span><br><span class="line"> </span><br><span class="line"><span class="keyword">endmodule</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="测试方案"><a href="#测试方案" class="headerlink" title="测试方案"></a>测试方案</h2><p>首先编写一段涵盖所有指令和边界情况、尽可能出现写后读数据冒险的MIPS代码。</p>
+<figure class="highlight mips"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ori </span>$<span class="number">28</span>, $<span class="number">0</span>, <span class="number">0</span></span><br><span class="line"><span class="keyword">ori </span>$<span class="number">29</span>, $<span class="number">0</span>, <span class="number">0</span></span><br><span class="line"><span class="keyword">ori </span>$<span class="number">1</span>, $<span class="number">0</span>, <span class="number">100</span></span><br><span class="line"><span class="keyword">ori </span>$<span class="number">2</span>, $<span class="number">0</span>, <span class="number">50</span></span><br><span class="line"><span class="keyword">ori </span>$<span class="number">3</span>, $<span class="number">0</span>, <span class="number">20</span></span><br><span class="line"><span class="keyword">ori </span>$<span class="number">4</span>, $<span class="number">0</span>, <span class="number">30</span></span><br><span class="line"><span class="keyword">ori </span>$<span class="number">5</span>, $<span class="number">0</span>, <span class="number">0</span></span><br><span class="line"><span class="keyword">ori </span>$<span class="number">6</span>, $<span class="number">0</span>, <span class="number">655</span></span><br><span class="line"><span class="keyword">lui </span>$<span class="number">7</span>, <span class="number">4660</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">add </span>$<span class="number">8</span>, $<span class="number">1</span>, $<span class="number">2</span></span><br><span class="line"><span class="keyword">add </span>$<span class="number">9</span>, $<span class="number">8</span>, $<span class="number">3</span></span><br><span class="line"><span class="keyword">sub </span>$<span class="number">10</span>, $<span class="number">9</span>, $<span class="number">4</span></span><br><span class="line"><span class="keyword">and </span>$<span class="number">11</span>, $<span class="number">10</span>, $<span class="number">6</span></span><br><span class="line"><span class="keyword">or </span>$<span class="number">12</span>, $<span class="number">11</span>, $<span class="number">7</span></span><br><span class="line"><span class="keyword">slt </span>$<span class="number">13</span>, $<span class="number">1</span>, $<span class="number">2</span></span><br><span class="line"><span class="keyword">slt </span>$<span class="number">14</span>, $<span class="number">13</span>, $<span class="number">5</span></span><br><span class="line"><span class="keyword">sltu </span>$<span class="number">15</span>, $<span class="number">6</span>, $<span class="number">1</span></span><br><span class="line"><span class="keyword">sltu </span>$<span class="number">16</span>, $<span class="number">15</span>, $<span class="number">3</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">addi </span>$<span class="number">17</span>, $<span class="number">16</span>, <span class="number">89</span></span><br><span class="line"><span class="keyword">addi </span>$<span class="number">18</span>, $<span class="number">17</span>, <span class="number">1650</span></span><br><span class="line"><span class="keyword">andi </span>$<span class="number">19</span>, $<span class="number">18</span>, <span class="number">25</span></span><br><span class="line"><span class="keyword">ori </span>$<span class="number">20</span>, $<span class="number">19</span>, <span class="number">280</span></span><br><span class="line"><span class="keyword">addi </span>$<span class="number">21</span>, $<span class="number">5</span>, <span class="number">7</span></span><br><span class="line"><span class="keyword">andi </span>$<span class="number">22</span>, $<span class="number">6</span>, <span class="number">6535</span></span><br><span class="line"><span class="keyword">ori </span>$<span class="number">23</span>, $<span class="number">7</span>, <span class="number">255</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">sw </span>$<span class="number">23</span>, <span class="number">0</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">lw </span>$<span class="number">24</span>, <span class="number">0</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">sh </span>$<span class="number">24</span>, <span class="number">2</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">lh </span>$<span class="number">25</span>, <span class="number">2</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">sb </span>$<span class="number">25</span>, <span class="number">1</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">lb </span>$<span class="number">26</span>, <span class="number">1</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">lw </span>$<span class="number">27</span>, <span class="number">35</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">sh </span>$<span class="number">27</span>, <span class="number">34</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">sb </span>$<span class="number">26</span>, <span class="number">35</span>($<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">mult </span>$<span class="number">1</span>, $<span class="number">2</span></span><br><span class="line"><span class="keyword">mfhi </span>$<span class="number">28</span></span><br><span class="line"><span class="keyword">mflo </span>$<span class="number">29</span></span><br><span class="line"><span class="keyword">multu </span>$<span class="number">3</span>, $<span class="number">4</span></span><br><span class="line"><span class="keyword">mflo </span>$<span class="number">30</span></span><br><span class="line"><span class="keyword">mfhi </span>$<span class="number">31</span></span><br><span class="line"><span class="keyword">div </span>$<span class="number">1</span>, $<span class="number">3</span></span><br><span class="line"><span class="keyword">mflo </span>$<span class="number">1</span></span><br><span class="line"><span class="keyword">mfhi </span>$<span class="number">2</span></span><br><span class="line"><span class="keyword">divu </span>$<span class="number">6</span>, $<span class="number">4</span></span><br><span class="line"><span class="keyword">mflo </span>$<span class="number">3</span></span><br><span class="line"><span class="keyword">mthi </span>$<span class="number">4</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">mthi </span>$<span class="number">5</span></span><br><span class="line"><span class="keyword">mfhi </span>$<span class="number">5</span></span><br><span class="line"><span class="keyword">mtlo </span>$<span class="number">6</span></span><br><span class="line"><span class="keyword">mfhi </span>$<span class="number">6</span></span><br><span class="line"><span class="keyword">mult </span>$<span class="number">7</span>, $<span class="number">1</span></span><br><span class="line"><span class="keyword">mflo </span>$<span class="number">6</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">jal </span>label1</span><br><span class="line"><span class="keyword">add </span>$<span class="number">1</span>, $<span class="number">2</span>, $<span class="number">3</span></span><br><span class="line"><span class="keyword">sub </span>$<span class="number">2</span>, $<span class="number">4</span>, $<span class="number">5</span></span><br><span class="line"><span class="keyword">beq </span>$<span class="number">2</span>, $<span class="number">7</span>, label2</span><br><span class="line"><span class="keyword">sw </span>$<span class="number">31</span>, <span class="number">8</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">lb </span>$<span class="number">31</span>, <span class="number">7</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">add </span>$<span class="number">15</span>, $<span class="number">13</span>, $<span class="number">0</span></span><br><span class="line"><span class="keyword">beq </span>$<span class="number">15</span>, $<span class="number">13</span>, label2</span><br><span class="line"><span class="symbol"></span></span><br><span class="line"><span class="symbol">label1:</span></span><br><span class="line"><span class="keyword">sub </span>$<span class="number">5</span>, $<span class="number">30</span>, $<span class="number">1</span></span><br><span class="line"><span class="keyword">sh </span>$<span class="number">5</span>, <span class="number">6</span>($<span class="number">0</span>)</span><br><span class="line"><span class="keyword">jr </span>$<span class="number">31</span></span><br><span class="line"><span class="keyword">lw </span>$<span class="number">6</span>, <span class="number">4</span>($<span class="number">0</span>)</span><br><span class="line"><span class="symbol"></span></span><br><span class="line"><span class="symbol">label2:</span></span><br><span class="line"><span class="keyword">or </span>$<span class="number">22</span>, $<span class="number">4</span>, $<span class="number">9</span></span><br><span class="line"><span class="keyword">and </span>$<span class="number">25</span>, $<span class="number">22</span>, $<span class="number">6</span></span><br><span class="line"><span class="keyword">slt </span>$<span class="number">13</span>, $<span class="number">25</span>, $<span class="number">11</span></span><br></pre></td></tr></table></figure>
+
+<p>导出机器码。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line">341c0000</span><br><span class="line">341d0000</span><br><span class="line">34010064</span><br><span class="line">34020032</span><br><span class="line">34030014</span><br><span class="line">3404001e</span><br><span class="line">34050000</span><br><span class="line">3406028f</span><br><span class="line">3c071234</span><br><span class="line">00224020</span><br><span class="line">01034820</span><br><span class="line">01245022</span><br><span class="line">01465824</span><br><span class="line">01676025</span><br><span class="line">0022682a</span><br><span class="line">01a5702a</span><br><span class="line">00c1782b</span><br><span class="line">01e3802b</span><br><span class="line">22110059</span><br><span class="line">22320672</span><br><span class="line">32530019</span><br><span class="line">36740118</span><br><span class="line">20b50007</span><br><span class="line">30d61987</span><br><span class="line">34f700ff</span><br><span class="line">ac170000</span><br><span class="line">8c180000</span><br><span class="line">a4180002</span><br><span class="line">84190002</span><br><span class="line">a0190001</span><br><span class="line">801a0001</span><br><span class="line">8c1b0023</span><br><span class="line">a41b0022</span><br><span class="line">a01a0023</span><br><span class="line">00220018</span><br><span class="line">0000e010</span><br><span class="line">0000e812</span><br><span class="line">00640019</span><br><span class="line">0000f012</span><br><span class="line">0000f810</span><br><span class="line">0023001a</span><br><span class="line">00000812</span><br><span class="line">00001010</span><br><span class="line">00c4001b</span><br><span class="line">00001812</span><br><span class="line">00800011</span><br><span class="line">00a00011</span><br><span class="line">00002810</span><br><span class="line">00c00013</span><br><span class="line">00003010</span><br><span class="line">00e10018</span><br><span class="line">00003012</span><br><span class="line">0c000c3c</span><br><span class="line">00430820</span><br><span class="line">00851022</span><br><span class="line">10470008</span><br><span class="line">ac1f0008</span><br><span class="line">801f0007</span><br><span class="line">01a07820</span><br><span class="line">11ed0004</span><br><span class="line">03c12822</span><br><span class="line">a4050006</span><br><span class="line">03e00008</span><br><span class="line">8c060004</span><br><span class="line">0089b025</span><br><span class="line">02c6c824</span><br><span class="line">032b682a</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>进行仿真测试，得到输出，与预期相符.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"> 38@00003000: $28 &lt;= 00000000</span><br><span class="line"> 42@00003004: $29 &lt;= 00000000</span><br><span class="line"> 46@00003008: $ 1 &lt;= 00000064</span><br><span class="line"> 50@0000300c: $ 2 &lt;= 00000032</span><br><span class="line"> 54@00003010: $ 3 &lt;= 00000014</span><br><span class="line"> 58@00003014: $ 4 &lt;= 0000001e</span><br><span class="line"> 62@00003018: $ 5 &lt;= 00000000</span><br><span class="line"> 66@0000301c: $ 6 &lt;= 0000028f</span><br><span class="line"> 70@00003020: $ 7 &lt;= 12340000</span><br><span class="line"> 74@00003024: $ 8 &lt;= 00000096</span><br><span class="line"> 78@00003028: $ 9 &lt;= 000000aa</span><br><span class="line"> 82@0000302c: $10 &lt;= 0000008c</span><br><span class="line"> 86@00003030: $11 &lt;= 0000008c</span><br><span class="line"> 90@00003034: $12 &lt;= 1234008c</span><br><span class="line"> 94@00003038: $13 &lt;= 00000000</span><br><span class="line"> 98@0000303c: $14 &lt;= 00000000</span><br><span class="line">102@00003040: $15 &lt;= 00000000</span><br><span class="line">106@00003044: $16 &lt;= 00000001</span><br><span class="line">110@00003048: $17 &lt;= 0000005a</span><br><span class="line">114@0000304c: $18 &lt;= 000006cc</span><br><span class="line">118@00003050: $19 &lt;= 00000008</span><br><span class="line">122@00003054: $20 &lt;= 00000118</span><br><span class="line">126@00003058: $21 &lt;= 00000007</span><br><span class="line">130@0000305c: $22 &lt;= 00000087</span><br><span class="line">134@00003064: *00000000 &lt;= 123400ff</span><br><span class="line">134@00003060: $23 &lt;= 123400ff</span><br><span class="line">142@0000306c: *00000000 &lt;= 00ff00ff</span><br><span class="line">142@00003068: $24 &lt;= 123400ff</span><br><span class="line">150@00003074: *00000000 &lt;= 00ffffff</span><br><span class="line">150@00003070: $25 &lt;= 000000ff</span><br><span class="line">158@00003078: $26 &lt;= ffffffff</span><br><span class="line">162@00003080: *00000020 &lt;= 00000000</span><br><span class="line">162@0000307c: $27 &lt;= 00000000</span><br><span class="line">166@00003084: *00000020 &lt;= ff000000</span><br><span class="line">202@0000308c: $28 &lt;= 00000000</span><br><span class="line">206@00003090: $29 &lt;= 00001388</span><br><span class="line">238@00003098: $30 &lt;= 00000258</span><br><span class="line">242@0000309c: $31 &lt;= 00000000</span><br><span class="line">294@000030a4: $ 1 &lt;= 00000005</span><br><span class="line">298@000030a8: $ 2 &lt;= 00000000</span><br><span class="line">350@000030b0: $ 3 &lt;= 00000015</span><br><span class="line">362@000030bc: $ 5 &lt;= 00000000</span><br><span class="line">370@000030c4: $ 6 &lt;= 00000000</span><br><span class="line">402@000030cc: $ 6 &lt;= 5b040000</span><br><span class="line">406@000030d0: $31 &lt;= 000030d8</span><br><span class="line">410@000030d4: $ 1 &lt;= 00000015</span><br><span class="line">414@000030f4: *00000004 &lt;= 02430000</span><br><span class="line">414@000030f0: $ 5 &lt;= 00000243</span><br><span class="line">426@000030fc: $ 6 &lt;= 02430000</span><br><span class="line">430@000030d8: $ 2 &lt;= fffffddb</span><br><span class="line">438@000030e0: *00000008 &lt;= 000030d8</span><br><span class="line">446@000030e4: $31 &lt;= 00000002</span><br><span class="line">450@000030e8: $15 &lt;= 00000000</span><br><span class="line">462@000030f0: $ 5 &lt;= 00000243</span><br><span class="line">466@00003100: $22 &lt;= 000000be</span><br><span class="line">470@00003104: $25 &lt;= 00000000</span><br><span class="line">474@00003108: $13 &lt;= 00000001</span><br></pre></td></tr></table></figure>
+
+<p>初步判断实现了基本功能。然后使用Kie-Chi学长的COT评测机，进行与Mars对拍的测试，得到结果正确。</p>
+<h2 id="思考题汇总"><a href="#思考题汇总" class="headerlink" title="思考题汇总"></a>思考题汇总</h2><blockquote>
+<p>1.为什么需要有单独的乘除法部件而不是整合进 ALU？为何需要有独立的 HI、LO 寄存器？</p>
+</blockquote>
+<p>因为乘除法运算需要花费多个周期，设置单独的乘除法部件，和ALU分开，可以使得乘除法运算期间，后续的非乘除运算仍然可以通过ALU运算，不需要阻塞，提高了效率。<br>设置独立的HI、LO寄存器是因为乘除法运算之后需要保存结果，后续遇到mfhi和mflo指令再读取。如果不单独设立，在读取之前就会被其他计算的结果覆盖。</p>
+<blockquote>
+<p>2.真实的流水线 CPU 是如何使用实现乘除法的？请查阅相关资料进行简单说明。</p>
+</blockquote>
+<p>流水线CPU通过专用硬件单元搭配适配流水线的优化策略实现乘除法，整数乘法常借助布斯算法，搭配串行乘法器或华莱士树等并行乘法器运算，浮点乘法由FPU处理，整数除法多用SRT等迭代算法，浮点除法则由FPU拆分符号位、阶码和尾数后分步运算。适配流水线时，嵌入式等低性能CPU如RISC - V E203会用流水线停顿机制，检测到后续指令依赖未完成的乘除结果时，冻结各流水线阶段直至运算完成；而高性能CPU会将乘除单元拆分为多级流水线，同时结合乱序执行与寄存器重命名技术，让无关指令绕过乘除指令执行，减少运算延迟对流水线吞吐量的影响，部分还会通过旁路模块检测指令相关性，或新增专用寄存器存储乘除中间结果，进一步适配流水线的多阶段处理流程。</p>
+<blockquote>
+<p>3.请结合自己的实现分析，你是如何处理 Busy 信号带来的周期阻塞的？</p>
+</blockquote>
+<p>当busy信号有效，表示乘除法运算正在进行时，如果D级指令为乘除法相关指令（mult,multu,div,divu,mfhi,mflo,mthi,mtlo），则将其阻塞在D级。</p>
+<blockquote>
+<p>4.请问采用字节使能信号的方式处理写指令有什么好处？（提示：从清晰性、统一性等角度考虑）</p>
+</blockquote>
+<p>清晰性：每一位使能信号对应一个字节，简明易懂，可读性好<br>统一性：sb,sh,sw指令都可以共用这个byteen信号，无需为每个指令单独设置信号</p>
+<blockquote>
+<p>5.请思考，我们在按字节读和按字节写时，实际从 DM 获得的数据和向 DM 写入的数据是否是一字节？在什么情况下我们按字节读和按字节写的效率会高于按字读和按字写呢？</p>
+</blockquote>
+<p>不是一字节，是一字，从 DM 获得的数据要经过DE模块提取字节，向 DM 写入的数据要先经过BE模块。<br>如果要读取或写入的大部分是字节，且不在同一字中，按字节读和按字节写的效率会更高。</p>
+<blockquote>
+<p>6.为了对抗复杂性你采取了哪些抽象和规范手段？这些手段在译码和处理数据冲突的时候有什么样的特点与帮助？</p>
+</blockquote>
+<p>我主要在译码部分采用了宏定义和参数常量。</p>
+<figure class="highlight verilog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">`<span class="keyword">define</span> cal_R (add||sub||and1||or1||slt||sltu)</span></span><br><span class="line"><span class="meta">`<span class="keyword">define</span> cal_I (addi||andi||ori||lui)</span></span><br><span class="line"><span class="meta">`<span class="keyword">define</span> cal (`cal_R||`cal_I)</span></span><br><span class="line"><span class="meta">`<span class="keyword">define</span> load (lb||lh||lw)</span></span><br><span class="line"><span class="meta">`<span class="keyword">define</span> store (sb||sh||sw)</span></span><br><span class="line"><span class="meta">`<span class="keyword">define</span> las (`load||`store)</span></span><br><span class="line"><span class="meta">`<span class="keyword">define</span> mad (mult||multu||div||divu)</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight verilog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">parameter</span> sll16 = <span class="number">4&#x27;b0000</span>;</span><br><span class="line"><span class="keyword">parameter</span> add = <span class="number">4&#x27;b0001</span>;</span><br><span class="line"><span class="keyword">parameter</span> sub = <span class="number">4&#x27;b0010</span>;</span><br><span class="line"><span class="keyword">parameter</span> ori = <span class="number">4&#x27;b0011</span>;</span><br><span class="line"><span class="keyword">parameter</span> andi = <span class="number">4&#x27;b0100</span>;</span><br><span class="line"><span class="keyword">parameter</span> slt = <span class="number">4&#x27;b0101</span>;</span><br><span class="line"><span class="keyword">parameter</span> sltu = <span class="number">4&#x27;b0110</span>;</span><br></pre></td></tr></table></figure>
+
+<p>将指令分类，以及用有意义的名称来替代常量等方法，增强了代码的可读性，减少了代码重复和冗余。同时，添加指令时只需要判断指令类型，对宏定义进行修改，减小了工作量，也不容易出错。</p>
+<blockquote>
+<p>7.在本实验中你遇到了哪些不同指令类型组合产生的冲突？你又是如何解决的？相应的测试样例是什么样的？</p>
+</blockquote>
+<p>P5的数据冲突和转发策略仍然保留。对于P6新增的乘除模块的结果，仍然可能出现冲突，需要设置M-&gt;D_RD1,D_RD2，W-&gt;D_RD1,D_RD2的转发路径。<br>测试样例如下：</p>
+<figure class="highlight mips"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">lui </span>$<span class="built_in">t1</span>,<span class="number">0x1234</span> </span><br><span class="line"><span class="keyword">ori </span>$<span class="built_in">t1</span>,<span class="number">0x5678</span></span><br><span class="line"><span class="keyword">lui </span>$<span class="built_in">t1</span>,<span class="number">0xa581</span></span><br><span class="line"><span class="keyword">ori </span>$<span class="built_in">t1</span>,<span class="number">0xc463</span></span><br><span class="line"><span class="keyword">mult </span>$<span class="built_in">t1</span>,$<span class="built_in">t2</span></span><br><span class="line"><span class="keyword">mfhi </span>$<span class="built_in">t3</span></span><br><span class="line"><span class="keyword">add </span>$<span class="built_in">t4</span>,$<span class="built_in">t3</span>,$<span class="built_in">t3</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>8.如果你是手动构造的样例，请说明构造策略，说明你的测试程序如何保证覆盖了所有需要测试的情况；如果你是完全随机生成的测试样例，请思考完全随机的测试程序有何不足之处；如果你在生成测试样例时采用了特殊的策略，比如构造连续数据冒险序列，请你描述一下你使用的策略如何结合了随机性达到强测的效果。  </p>
+</blockquote>
+<p>我首先手动构造样例，单独测试了每条指令数据通路的正确，再特意设置紧密写后读导致的冒险，测试转发和阻塞逻辑的正确。最后使用了Kie-Chi学长的COT评测机，与Mars对拍，结果均显示正确。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://AddCloud330.github.io">AddCloud</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://addcloud330.github.io/2026/07/11/CO-P6/">https://addcloud330.github.io/2026/07/11/CO-P6/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://AddCloud330.github.io" target="_blank">Echoes of the Cloud</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/CO/">CO</a></div><div class="post-share"><div class="social-share" data-image="/img/avatar.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/07/11/OO-U1/" title="OO-U1总结"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">OO-U1总结</div></div><div class="info-2"><div class="info-item-1">一、前言第一单元的三次作业，我们从一个简单的表达式解析化简开始，逐步迭代到支持自定义函数、指数函数、选择表达式、二元变量、递推定义以及求导因子。整个过程中，我深刻体会到了面向对象设计在应对需求变化时的优势，也踩了不少坑。这篇博客将对我的程序结构进行度量分析，总结架构设计经验，反思 bug 与测试策略，并谈谈这一单元的学习心得。 二、程序结构度量分析2.1 总体情况项目总代码行 1221 行，其中源码 1087 行，空行 134 行。总圈复杂度（WMC）248，平均每个方法复杂度 2.28，平均类复杂度 12.40。 整体结构清晰，大部分类的复杂度较低，少数核心类承担了较多职责。 2.2 类分析 设计说明：  节点层次：Node 接口定义了 accept 方法，所有 AST 节点（Expr、Term、各种 Factor）均实现它，配合 Visitor 模式实现算法与结构的分离。 表达式层次：Expr 包含多个 SignTerm，每个 SignTerm 包含一个 Term。Term 包含多个 Factor。 因子层次：Factor 接口的子类覆盖了所有语法元素，包括基本变量、常数、表...</div></div></div></a><a class="pagination-related" href="/2026/07/11/CO-P7/" title="P7-异常中断和外设"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">P7-异常中断和外设</div></div><div class="info-2"><div class="info-item-1">新增模块 CP0CP0协处理器内置寄存器：各寄存器位域如下：CP0模块的端口定义： 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475`define SR_IM SR[15:10]`define SR_EXL SR[1]`define SR_IE SR[0]`define Cause_BD Cause[31]`define Cause_IP Cause[15:10]`define Cause_ExcCode Cause[6:2]parameter sr = 5&#x27;h0c;parameter cause = 5&#x27;h0d;parameter epc = 5&#x27;h0e;module CP0(    input wire clk,    input wire reset,    input wire en,    input wire...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/07/11/CO-P7/" title="P7-异常中断和外设"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">P7-异常中断和外设</div></div><div class="info-2"><div class="info-item-1">新增模块 CP0CP0协处理器内置寄存器：各寄存器位域如下：CP0模块的端口定义： 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475`define SR_IM SR[15:10]`define SR_EXL SR[1]`define SR_IE SR[0]`define Cause_BD Cause[31]`define Cause_IP Cause[15:10]`define Cause_ExcCode Cause[6:2]parameter sr = 5&#x27;h0c;parameter cause = 5&#x27;h0d;parameter epc = 5&#x27;h0e;module CP0(    input wire clk,    input wire reset,    input wire en,    input wire...</div></div></div></a><a class="pagination-related" href="/2026/07/11/CO-P3/" title="P3-Logisim单周期CPU"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">P3-Logisim单周期CPU</div></div><div class="info-2"><div class="info-item-1">设计草稿  模块规格1.IFU（取指令单元）（1）模块接口    信号名 方向 描述    clk I 时钟信号   reset I 异步复位信号   nPC_sel I nPC的选择信号（1代表beq指令，0代表其他指令）   zero I beq指令的选择信号（1代表跳转）   ext_imm[31:0] I beq指令的偏移量   PC[31:0] O 输出程序计数器的当前值   Instr[31:0] O 输出下一条指令的32位二进制码   （2）功能定义    序号 功能名称 描述    1 复位 reset信号有效时，PC数值回到初始值（0x00003000）   2 取下一条指令 nPC_sel&#x3D;0（非beq指令）或者zero&#x3D;0时，PC&#x3D;PC+4，Instr顺序取得下一条指令   3 跳转 nPC_sel&#x3D;1（beq指令）且zero&#x3D;0（A&#x3D;B）时，PC&#x3D;PC+4+4*ext_imm，Instr取得跳转地址处的指令，实现跳转   （3）电路实现 2.ALU（计算单元）（1）模块接口    信号名...</div></div></div></a><a class="pagination-related" href="/2026/07/11/CO-P4/" title="P4-Verilog单周期CPU"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">P4-Verilog单周期CPU</div></div><div class="info-2"><div class="info-item-1">设计草稿 模块规格1.IFU（取指令单元）（1）模块接口    信号名 方向 描述    clk I 时钟信号   reset I 异步复位信号   zero I beq指令的选择信号（1代表跳转）   nPC_sel[2:0] I nPC的选择信号000:非跳转指令001:beq指令010:jal指令011:jr指令   target[25:0] I jal指令的目标[27:2]   ext_imm[31:0] I beq指令的偏移量   jrReg[31:0] I jr指令的目标寄存器中的值   PC[31:0] O 输出程序计数器的当前值   Instr[31:0] O 输出下一条指令的32位二进制码   PCplus4[31:0] O 下一条指令的地址   （2）功能定义    序号 功能名称 条件 操作    1 复位 reset信号有效 PC数值回到初始值（0x00003000）   2 取下一条指令 nPC_sel&#x3D;00或nPC_sel&#x3D;01&amp;&amp;zero&#x3D;0 PC&#x3D;PC+4，Instr顺序取得下一条指令   3...</div></div></div></a><a class="pagination-related" href="/2026/07/11/CO-P5/" title="P5-Verilog五级流水线CPU"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">P5-Verilog五级流水线CPU</div></div><div class="info-2"><div class="info-item-1">一、设计草稿1.模块与划分将单周期CPU改造为五级流水线CPU，采用分布式译码，划分为F,D,E,M,W五级，各级设立单独的Controller，并在各级间添加流水线寄存器。 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475module Controller(    input wire [5:0] op,    input wire [5:0] funct,    output wire [1:0] RegDst,    output wire ALUSrc,    output wire [1:0] Mem2Reg,    output wire RegWrite,    output wire MemWrite,    output wire [2:0] nPC_sel,    output wire [2:0] ALUOp,    outpu...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">AddCloud</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">17</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">3</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">1</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%B0%E5%A2%9E%E6%A8%A1%E5%9D%97"><span class="toc-number">1.</span> <span class="toc-text">新增模块</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E4%B9%98%E9%99%A4%E6%A8%A1%E5%9D%97"><span class="toc-number">1.1.</span> <span class="toc-text">1. 乘除模块</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-BE"><span class="toc-number">1.2.</span> <span class="toc-text">2. BE</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-DE"><span class="toc-number">1.3.</span> <span class="toc-text">3. DE</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B5%8B%E8%AF%95%E6%96%B9%E6%A1%88"><span class="toc-number">2.</span> <span class="toc-text">测试方案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%80%83%E9%A2%98%E6%B1%87%E6%80%BB"><span class="toc-number">3.</span> <span class="toc-text">思考题汇总</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P4/" title="P4-Verilog单周期CPU">P4-Verilog单周期CPU</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P3/" title="P3-Logisim单周期CPU">P3-Logisim单周期CPU</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P7/" title="P7-异常中断和外设">P7-异常中断和外设</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P6/" title="P6-新增功能">P6-新增功能</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/OO-U1/" title="OO-U1总结">OO-U1总结</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By AddCloud</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"></div><style>
+/* ===== 整体背景 ===== */
+body {
+  background: #FDF5F5 !important;
+  background-image: url('https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/bg.png') !important;
+  background-size: cover !important;
+  background-attachment: fixed !important;
+  background-position: center center !important;
+  background-repeat: no-repeat center;
+}
+/* ===== 针对手机竖屏，重新定位左侧人物 ===== */
+@media screen and (max-width: 768px) {
+  body {
+    /* 调整这个百分比，直到人物脸部完全显示 */
+    background-position: 20% 50% !important;
+  }
+}
+/* ===== 毛玻璃卡片效果 ===== */
+#recent-posts > .recent-post-item,
+.layout > .recent-posts > .recent-post-item,
+.layout > div:not(.recent-posts) {
+  background: rgba(255, 248, 248, 0.55) !important;
+  backdrop-filter: blur(12px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(1.4) !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 8px 32px rgba(200, 160, 180, 0.18) !important;
+  transition: all 0.4s ease !important;
+}
+#recent-posts > .recent-post-item:hover,
+.layout > div:not(.recent-posts):hover {
+  background: rgba(255, 248, 248, 0.70) !important;
+  box-shadow: 0 12px 48px rgba(200, 160, 180, 0.28) !important;
+  transform: translateY(-2px) !important;
+}
+/* ===== 标题文字风格 ===== */
+#site-title {
+  font-family: 'Georgia', 'Noto Serif SC', serif !important;
+  font-weight: 300 !important;
+  letter-spacing: 6px !important;
+  color: #F5E0E0 !important;
+  text-shadow: 0 2px 20px rgba(200, 150, 160, 0.5) !important;
+}
+#site-subtitle {
+  font-family: 'Georgia', 'Noto Serif SC', serif !important;
+  font-weight: 200 !important;
+  letter-spacing: 8px !important;
+  color: rgba(255, 240, 240, 0.85) !important;
+  text-shadow: 0 2px 16px rgba(180, 140, 150, 0.4) !important;
+}
+/* ===== 文章标题 ===== */
+.post-title {
+  font-family: 'Georgia', 'Noto Serif SC', serif !important;
+  font-weight: 400 !important;
+  letter-spacing: 2px !important;
+}
+.post-meta {
+  color: #C8A8B0 !important;
+  font-size: 14px !important;
+}
+/* ===== 链接颜色 ===== */
+a {
+  color: #D4A0A8 !important;
+  transition: color 0.3s ease !important;
+}
+a:hover {
+  color: #E8B0B8 !important;
+}
+/* ===== 侧边栏头像 ===== */
+.avatar-img {
+  border: 3px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 4px 24px rgba(200, 160, 180, 0.3) !important;
+}
+/* ===== 滚动条（浅粉） ===== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 245, 245, 0.6);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #F5C4C4;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E8B0B0;
+}
+/* ===== 选中文字颜色 ===== */
+::selection {
+  background: #F5C4C4 !important;
+  color: #FFFFFF !important;
+}
+/* ===== 顶部导航栏透明毛玻璃 ===== */
+#nav {
+  background: rgba(255, 248, 248, 0.35) !important;
+  backdrop-filter: blur(16px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.4) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 2px 24px rgba(200, 160, 180, 0.08) !important;
+}
+#nav .site-page {
+  color: #F5E8E8 !important;
+  text-shadow: 0 1px 8px rgba(180, 140, 150, 0.3) !important;
+}
+#nav .site-page:hover {
+  color: #FFFFFF !important;
+}
+/* ===== 页脚 ===== */
+#footer {
+  background: rgba(255, 248, 248, 0.30) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #E8D0D0 !important;
+  text-shadow: 0 1px 8px rgba(180, 140, 150, 0.2) !important;
+}
+#footer a {
+  color: #E8C8C8 !important;
+}
+#footer a:hover {
+  color: #F5E0E0 !important;
+}
+/* ===== 代码块圆角柔和 ===== */
+.highlight {
+  border-radius: 16px !important;
+  box-shadow: 0 4px 20px rgba(200, 160, 180, 0.10) !important;
+}
+/* ===== 首页标题区域透明 ===== */
+#page-header, 
+#page-header:before,
+.page-header,
+.not-home-page #page-header,
+.post #page-header {
+  background-image: none !important;          /* 关键：去掉图片 */
+  background: transparent !important;         /* 清除所有背景 */
+  background-color: transparent !important;   /* 确保颜色透明 */
+}
+/* ===== 右侧边栏 "Follow Me" 按钮 ===== */
+.author-info__sayhi .btn,
+#aside-content .card_author .btn {
+  background: rgba(245, 196, 196, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  color: #FFFFFF !important;
+  border-radius: 30px !important;
+  backdrop-filter: blur(4px) !important;
+  box-shadow: 0 2px 12px rgba(200, 160, 180, 0.2) !important;
+  transition: all 0.4s ease !important;
+}
+.author-info__sayhi .btn:hover,
+#aside-content .card_author .btn:hover {
+  background: rgba(245, 196, 196, 0.95) !important;
+  transform: scale(1.04) !important;
+  box-shadow: 0 4px 20px rgba(200, 160, 180, 0.4) !important;
+}
+/* ===== 按钮风格 ===== */
+.btn-beautify {
+  background: rgba(245, 196, 196, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 30px !important;
+  backdrop-filter: blur(4px) !important;
+  color: #FFFFFF !important;
+}
+.btn-beautify:hover {
+  background: rgba(245, 196, 196, 0.85) !important;
+  transform: scale(1.02) !important;
+}
+</style>
+<script>
+(function() {
+  const count = 25;                    // 花瓣数量（减少）
+  const container = document.body;
+  const petalImg = '/img/petal.png';   // 你的单瓣图片路径
+
+  // 注入动画关键帧
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes petalFall {
+      0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.9; }
+      100% { transform: translateY(${window.innerHeight + 120}px) rotate(720deg) scale(0.5); opacity: 0.1; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  function createPetal(index) {
+    const petal = document.createElement('img');
+    // 均匀分布：把 0~100% 分成 count 份，每份的中心点，加上随机偏移 ±4%
+    const baseLeft = (index / count) * 100;
+    const randomOffset = (Math.random() - 0.5) * 8; // -4% ~ +4%
+    const left = Math.min(100, Math.max(0, baseLeft + randomOffset)); // 限制范围
+
+    const size = 22 + Math.random() * 18;     // 22~40px（保持适中）
+    const duration = 12 + Math.random() * 14; // 12~26 秒（更慢）
+    const delay = Math.random() * 10;         // 0~10 秒延迟（更分散）
+    const rotation = Math.random() * 360;
+
+    petal.src = petalImg;
+    petal.style.cssText = `
+      position: fixed;
+      top: -30px;
+      left: ${left}%;
+      width: ${size}px;
+      height: auto;
+      pointer-events: none;
+      z-index: 99999;
+      transform: rotate(${rotation}deg);
+      animation: petalFall ${duration}s linear ${delay}s infinite;
+      opacity: 0.85;
+    `;
+    container.appendChild(petal);
+  }
+
+  // 生成花瓣（按顺序生成，位置均匀分布）
+  for (let i = 0; i < count; i++) {
+    createPetal(i);
+  }
+
+  // 窗口大小变化时更新动画终点
+  window.addEventListener('resize', function() {
+    const existingStyle = document.querySelector('style[data-petal]');
+    if (existingStyle) {
+      existingStyle.textContent = `
+        @keyframes petalFall {
+          0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.9; }
+          100% { transform: translateY(${window.innerHeight + 120}px) rotate(720deg) scale(0.5); opacity: 0.1; }
+        }
+      `;
+    }
+  });
+})();
+</script>
+<script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

@@ -1,0 +1,533 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>OO-U1总结 | Echoes of the Cloud</title><meta name="author" content="AddCloud"><meta name="copyright" content="AddCloud"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="ffffff"><meta name="description" content="一、前言第一单元的三次作业，我们从一个简单的表达式解析化简开始，逐步迭代到支持自定义函数、指数函数、选择表达式、二元变量、递推定义以及求导因子。整个过程中，我深刻体会到了面向对象设计在应对需求变化时的优势，也踩了不少坑。这篇博客将对我的程序结构进行度量分析，总结架构设计经验，反思 bug 与测试策略，并谈谈这一单元的学习心得。 二、程序结构度量分析2.1 总体情况项目总代码行 1221 行，其中源">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OO-U1总结">
+<meta property="og:url" content="https://addcloud330.github.io/2026/07/11/OO-U1/index.html">
+<meta property="og:site_name" content="Echoes of the Cloud">
+<meta property="og:description" content="一、前言第一单元的三次作业，我们从一个简单的表达式解析化简开始，逐步迭代到支持自定义函数、指数函数、选择表达式、二元变量、递推定义以及求导因子。整个过程中，我深刻体会到了面向对象设计在应对需求变化时的优势，也踩了不少坑。这篇博客将对我的程序结构进行度量分析，总结架构设计经验，反思 bug 与测试策略，并谈谈这一单元的学习心得。 二、程序结构度量分析2.1 总体情况项目总代码行 1221 行，其中源">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://addcloud330.github.io/img/avatar.png">
+<meta property="article:published_time" content="2026-07-11T10:10:51.000Z">
+<meta property="article:modified_time" content="2026-07-11T12:05:04.102Z">
+<meta property="article:author" content="AddCloud">
+<meta property="article:tag" content="OO">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://addcloud330.github.io/img/avatar.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "OO-U1总结",
+  "url": "https://addcloud330.github.io/2026/07/11/OO-U1/",
+  "image": "https://addcloud330.github.io/img/avatar.png",
+  "datePublished": "2026-07-11T10:10:51.000Z",
+  "dateModified": "2026-07-11T12:05:04.102Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "AddCloud",
+      "url": "https://AddCloud330.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://addcloud330.github.io/2026/07/11/OO-U1/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'OO-U1总结',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@200;300;400;600&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Echoes of the Cloud</span></a><a class="nav-page-title" href="/"><span class="site-name">OO-U1总结</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">OO-U1总结</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-07-11T12:05:04.102Z" title="更新于 2026-07-11 20:05:04">2026-07-11</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%AF%BE%E7%A8%8B/">课程</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h2 id="一、前言"><a href="#一、前言" class="headerlink" title="一、前言"></a>一、前言</h2><p>第一单元的三次作业，我们从一个简单的表达式解析化简开始，逐步迭代到支持自定义函数、指数函数、选择表达式、二元变量、递推定义以及求导因子。整个过程中，我深刻体会到了面向对象设计在应对需求变化时的优势，也踩了不少坑。这篇博客将对我的程序结构进行度量分析，总结架构设计经验，反思 bug 与测试策略，并谈谈这一单元的学习心得。</p>
+<h2 id="二、程序结构度量分析"><a href="#二、程序结构度量分析" class="headerlink" title="二、程序结构度量分析"></a>二、程序结构度量分析</h2><h3 id="2-1-总体情况"><a href="#2-1-总体情况" class="headerlink" title="2.1 总体情况"></a>2.1 总体情况</h3><p>项目总代码行 <strong>1221 行</strong>，其中源码 <strong>1087 行</strong>，空行 <strong>134 行</strong>。<br>总圈复杂度（WMC）<strong>248</strong>，平均每个方法复杂度 <strong>2.28</strong>，平均类复杂度 <strong>12.40</strong>。</p>
+<p>整体结构清晰，大部分类的复杂度较低，少数核心类承担了较多职责。</p>
+<h3 id="2-2-类分析"><a href="#2-2-类分析" class="headerlink" title="2.2 类分析"></a>2.2 类分析</h3><p><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/classes.png" alt="classes"></p>
+<p>设计说明：</p>
+<ul>
+<li>节点层次：Node 接口定义了 accept 方法，所有 AST 节点（Expr、Term、各种 Factor）均实现它，配合 Visitor 模式实现算法与结构的分离。</li>
+<li>表达式层次：Expr 包含多个 SignTerm，每个 SignTerm 包含一个 Term。Term 包含多个 Factor。</li>
+<li>因子层次：Factor 接口的子类覆盖了所有语法元素，包括基本变量、常数、表达式因子、指数函数、自定义函数、选择表达式、求导因子、递推因子。</li>
+<li>多项式表示：ExpPoly 采用 Map&lt;Mono, BigInteger&gt; 表示多项式，Mono 包含 x 和 y 的指数以及一个 ExpPoly 类型的内部指数（用于表示 exp(…) 嵌套）。</li>
+<li>访问者：ToExpPolyVisitor 实现 Visitor&lt;ExpPoly&gt;，完成 AST → 多项式的转换。</li>
+</ul>
+<p>优点：</p>
+<ul>
+<li>扩展性强：新增语法元素只需新增 Factor 子类和对应的 visit 方法。</li>
+<li>数据与算法分离：求值、求导等操作独立于 AST 结构。</li>
+<li>多项式表示简洁：ExpPoly 的合并、乘法、求导等操作封装良好，支持任意指数和嵌套指数。</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>ExpPoly 的 toString 方法复杂（达到 60 行），包含多种特殊情况的处理，降低了可读性。</li>
+<li>递归定义函数（如 f{n}）的展开借助了 Deque 作用域和递归栈，逻辑稍显隐晦，容易出错</li>
+</ul>
+<h3 id="2-3-复杂度分析"><a href="#2-3-复杂度分析" class="headerlink" title="2.3 复杂度分析"></a>2.3 复杂度分析</h3><p><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/Metrics.png" alt="Metrics"></p>
+<p>其中有一些类复杂度较高的原因分析如下：</p>
+<table>
+<thead>
+<tr>
+<th>类</th>
+<th>平均复杂度 (OCavg)</th>
+<th>最大复杂度 (OCmax)</th>
+<th>总复杂度 (WMC)</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>ExpPoly</strong></td>
+<td>3.74</td>
+<td>16</td>
+<td>71</td>
+<td>核心多项式类，复杂度最高，<code>toString</code>、<code>multiply</code> 方法中分支较多</td>
+</tr>
+<tr>
+<td><strong>Lexer</strong></td>
+<td>6.40</td>
+<td>16</td>
+<td>32</td>
+<td>词法分析，长分支判断导致复杂度偏高</td>
+</tr>
+<tr>
+<td><strong>Parser</strong></td>
+<td>2.86</td>
+<td>8</td>
+<td>40</td>
+<td>递归下降解析，分支适中</td>
+</tr>
+<tr>
+<td><strong>ToExpPolyVisitor</strong></td>
+<td>2.67</td>
+<td>9</td>
+<td>32</td>
+<td>访问者实现，函数展开和缓存逻辑稍复杂</td>
+</tr>
+<tr>
+<td><strong>Processor</strong></td>
+<td>8.00</td>
+<td>8</td>
+<td>8</td>
+<td>仅一个方法，但包含多段逻辑（定义解析、主表达式解析）</td>
+</tr>
+</tbody></table>
+<p><strong>改进思考</strong>：</p>
+<ul>
+<li><strong>高复杂度集中在 ExpPoly</strong>：这与我的代码设计架构有关，是不可避免的核心类，但 <code>toString</code> 方法可以拆分为单独的输出类，降低维护难度。</li>
+<li><strong>Lexer 复杂度偏高</strong>：主要是 <code>NextToken</code> 方法中大量 <code>if-else</code> 分支，也许可以考虑用状态机或查表优化？但目前的复杂度还是可以接受的。</li>
+</ul>
+<h3 id="2-4-代码规模分析"><a href="#2-4-代码规模分析" class="headerlink" title="2.4 代码规模分析"></a>2.4 代码规模分析</h3><p><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/statistic.png" alt="statistic"></p>
+<ul>
+<li><code>ExpPoly</code> 是代码量最大的类，占据项目源码的 25%，因为多项式表示与运算模块是整个系统的核心。</li>
+<li><code>Parser</code> 和 <code>ToExpPolyVisitor</code> 规模适中，职责明确，未过度膨胀。</li>
+<li>各 <code>Factor</code> 子类（如 <code>NumFactor</code>、<code>VarFactor</code>）规模均在 20 行左右，小巧内聚。</li>
+</ul>
+<h3 id="2-5-耦合度分析"><a href="#2-5-耦合度分析" class="headerlink" title="2.5 耦合度分析"></a>2.5 耦合度分析</h3><p><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/matrix.png" alt="matrix"></p>
+<p>分析发现：</p>
+<ul>
+<li><code>ExpPoly</code> 被 <code>ToExpPolyVisitor</code>、<code>Mono</code>、<code>Processor</code> 等类依赖，是系统的核心数据模型，耦合度高但合理，因为它承担了多项式运算的核心职责，其他模块依赖它是必要的。</li>
+<li><code>ToExpPolyVisitor</code>依赖几乎所有 <code>Factor</code> 子类及 <code>Expr</code>、<code>Term</code>，符合访问者模式的设计预期，属于“可控耦合”，便于扩展。</li>
+<li><code>Token</code>被 <code>Lexer</code>、<code>Parser</code> 共同依赖，作为词法与语法分析的桥梁。</li>
+</ul>
+<h3 id="2-6-总结"><a href="#2-6-总结" class="headerlink" title="2.6 总结"></a>2.6 总结</h3><p>总的来说，复杂度方面，虽然核心类（ExpPoly）复杂度偏高，但其余类控制良好，平均复杂度 2.28 表现优秀；代码规模方面，总源码 1086 行，核心模块集中，扩展类保持轻量；在耦合与内聚方面，访问者模式带来了合理的耦合，各 Factor 类内聚性好，ExpPoly 职责稍多但可接受。最大的可优化点是将ExpPoly中的toString方法拆分为单独的输出类。</p>
+<h2 id="三、架构设计体验"><a href="#三、架构设计体验" class="headerlink" title="三、架构设计体验"></a>三、架构设计体验</h2><h3 id="3-1-三次迭代的架构演进"><a href="#3-1-三次迭代的架构演进" class="headerlink" title="3.1 三次迭代的架构演进"></a>3.1 三次迭代的架构演进</h3><p><strong>第一次作业（多项式合并化简）</strong><br>仅支持 <code>x</code> 的幂函数、常数、表达式因子，支持加减乘和幂运算。我采用了经典的递归下降解析方法，将表达式解析为 AST，然后通过Expr,Term,Factor各类中的 <code>toPoly</code> 方法转化为多项式，进行运算，最后输出化简后的结果。当时 <code>Poly</code> 只支持单变量，单项式中仅有 <code>expX</code> 字段。</p>
+<p><strong>第二次作业（引入自定义函数、指数函数、选择表达式）</strong><br>新增了 <code>exp</code> 函数、自定义函数调用和选择表达式 <code>[ (cond) ? true : false ]</code>。<br>此时因子种类增多，我想到能不能将AST中各个Node的<code>toPoly</code>方法集中在一起？这样便于我集中处理转化为多项式的过程，也能降低现有类的复杂度。于是通过查阅资料，我对代码进行了重构，引入了访问者模式，建立了Visitor接口以及实现该接口的ToExpPolyVisitor类。</p>
+<ul>
+<li>自定义函数的处理：在 <code>Processor</code> 中预先读取定义，<code>ToExpPolyVisitor</code> 中维护一个 <code>Map&lt;String, Expr&gt;</code>，遇到函数调用时替换参数（通过作用域栈 <code>scope</code> 实现）。</li>
+<li>指数函数：将<code>Poly</code>重构为<code>ExpPoly</code>，引入单项式Mono类，其中包括 <code>expX</code> 字段和 <code>expInner</code> 字段，后者用于表示 <code>exp(...)</code> 的嵌套。</li>
+<li>选择表达式：在 <code>visit(ChoiceFactor)</code> 中计算两个条件表达式，若相等则取真分支，否则取假分支。</li>
+</ul>
+<p>此时架构开始体现扩展性：新增因子只需添加新类并在 <code>Parser</code> 和 <code>Visitor</code> 中增加对应处理，原有 <code>ExpPoly</code> 的运算逻辑几乎不需改动。</p>
+<p><strong>第三次作业（增加变量 <code>y</code>、递推表达式、求导因子）</strong>  </p>
+<ul>
+<li>变量 <code>y</code>：给单项式的<code>Mono</code> 增加 <code>expY</code> 字段，<code>ExpPoly</code> 中的乘法、求导、输出都需要修改，但得益于封装，改动范围有限。</li>
+<li>递推表达式：支持 <code>f{n-1}</code> 和 <code>f{n-2}</code> 形式的调用，对应 <code>RecallFactor</code>。我通过 <code>Deque&lt;Integer&gt; recurStack</code> 记录当前递归深度，在 <code>expandFunc</code> 中根据偏移量查找对应的函数定义（<code>f{1}</code> 或 <code>f{2}</code>）。</li>
+<li>求导因子：<code>dx(...)</code>、<code>dy(...)</code>、<code>grad(...)</code> 被解析为 <code>DeriveFactor</code>，在 <code>visit</code> 中调用 <code>ExpPoly</code> 的导数方法。</li>
+</ul>
+<p>在整个过程中，我始终没有重构核心数据结构，而是通过增加字段和扩展方法的方式应对变化。访问者模式使得新操作（如求导）的添加变得容易，但 <code>ExpPoly</code> 内部逻辑随着功能增加而变得复杂，此时重构也变得困难，这是需要权衡的地方。</p>
+<h3 id="3-2-可扩展性设想"><a href="#3-2-可扩展性设想" class="headerlink" title="3.2 可扩展性设想"></a>3.2 可扩展性设想</h3><p>假设未来增加“三角函数”因子（如 <code>sin(factor)</code>），我的设计可以这样扩展：</p>
+<ul>
+<li>新增 <code>SinFactor</code> 类实现 <code>Factor</code>，并在 <code>Visitor</code> 中增加 <code>visit(SinFactor)</code> 方法。</li>
+<li><code>ExpPoly</code> 需要增加 <code>sin</code> 的表示方式，可能需要在 <code>Mono</code> 中增加 <code>sinInner</code> 字段，并在多项式运算中处理其展开和合并规则。虽然复杂度会上升，但可以顺利实现。</li>
+</ul>
+<h2 id="四、Bug-分析"><a href="#四、Bug-分析" class="headerlink" title="四、Bug 分析"></a>四、Bug 分析</h2><h3 id="4-1-我遇到的-Bug"><a href="#4-1-我遇到的-Bug" class="headerlink" title="4.1 我遇到的 Bug"></a>4.1 我遇到的 Bug</h3><p><strong>公测阶段</strong>  </p>
+<ul>
+<li><strong>第一次作业</strong>：较顺利实现，在强测和互测中未出现需要修复的bug。</li>
+<li><strong>第二次作业</strong>：在解析选择表达式 [ (cond) ? true : false ] 时，我解析了条件表达式后，无论条件是否成立，都对两个分支进行了求值。这导致当条件分支涉及非常复杂的因子时，程序会运行时间过长，而这完全是不必要的。正确的做法应该是根据条件值只计算对应分支。这导致我在强测和互测中都受到了制裁。</li>
+<li><strong>第三次作业</strong>：为了追求更高的性能分，我在 ExpPoly.toString 中增加了公因数提取逻辑，即对 exp(inner) 的 inner 多项式提取系数的最大公因数，将 exp(inner) 转为 exp(inner&#x2F;g)^g。该优化需要递归遍历多项式的所有项并计算 gcd，在 exp 嵌套层数较深时，时间复杂度急剧上升。虽然顺利通过强测，但在互测中被构造的极端用例卡到超时。</li>
+</ul>
+<h3 id="4-2-Bug-与复杂度关系"><a href="#4-2-Bug-与复杂度关系" class="headerlink" title="4.2 Bug 与复杂度关系"></a>4.2 Bug 与复杂度关系</h3><p>统计出现 Bug 的方法的圈复杂度：</p>
+<ul>
+<li><code>ExpPoly.multiply</code>：圈复杂度 8（多个循环和条件）</li>
+<li><code>ToExpPolyVisitor.expandFunc</code>：圈复杂度 7（嵌套条件与异常处理）</li>
+<li><code>ExpPoly.toString</code>：圈复杂度 12（大量的 if-else 分支）<br>未出现 Bug 的方法（如各 <code>Factor</code> 的 <code>accept</code>）圈复杂度均为 1。</li>
+</ul>
+<p>这说明高复杂度方法更容易隐藏错误。当我们为了提高性能得分（指第一单元的输出长度）而主动提高复杂度时，也给我们的程序留下了隐患。这让我意识到，优化应当建立在清晰的设计和可维护性之上，盲目追求极致优化可能适得其反，这也是老师多次提及的。另外，我体会到，复杂度更低的方法，修复起来更加容易，修改篇幅也更小。</p>
+<p>降低复杂度的思路：</p>
+<ul>
+<li>将复杂方法拆分为多个辅助方法，每个方法只处理一种情况。</li>
+<li>将重复出现的逻辑整合为独立方法，比如我的代码中<code>multiply</code> 中的合并逻辑可以提取为独立方法 <code>mergeTerm</code>。</li>
+<li>使用设计模式替代复杂的条件分支。</li>
+</ul>
+<h3 id="4-3-互测策略"><a href="#4-3-互测策略" class="headerlink" title="4.3 互测策略"></a>4.3 互测策略</h3><p>在b房间时，我的策略主要是下载同房间同学的代码，尝试找出逻辑上的漏洞。在第二次作业互测中这个策略发挥了很大的作用，而且我发现找出一个bug后，往往同房间多个同学存在相同的问题。但是在第三次作业中，我发现a房间同学的代码基本不存在明显的bug，只能通过构造极端样例，对程序的复杂度进行测试（虽然没有成功而且自己被hack了…）。</p>
+<h2 id="五、优化"><a href="#五、优化" class="headerlink" title="五、优化"></a>五、优化</h2><h3 id="5-1-性能优化"><a href="#5-1-性能优化" class="headerlink" title="5.1 性能优化"></a>5.1 性能优化</h3><ul>
+<li><strong>缓存</strong>：<code>ToExpPolyVisitor</code> 对每个函数名维护一个 <code>Map&lt;ExpPoly, ExpPoly&gt;</code>，避免重复展开同一参数下的函数。这在递推函数中效果显著，避免指数级重复计算。</li>
+<li><strong>快速幂</strong>：<code>ExpPoly.pow</code> 采用二进制指数算法，将时间复杂度从 O(n) 降至 O(log n)。（虽然好像有同学提出不一定更快？）</li>
+<li><strong>输出美化</strong>：<code>ExpPoly.toString</code> 中，对于 <code>exp(inner)</code> 若 inner 的系数有公因数，则提取出来写成 <code>exp(inner/g)^g</code> 的形式，减少了字符串长度，有利于提高性能得分。</li>
+</ul>
+<h3 id="5-2-正确性和简洁性"><a href="#5-2-正确性和简洁性" class="headerlink" title="5.2 正确性和简洁性"></a>5.2 正确性和简洁性</h3><p>我的优化均基于等价变换，且通过了测试的验证，能较好地保持正确性。例如缓存不会改变结果，快速幂与直接乘等价。输出优化只改变表现形式，不影响语义。<br>但是优化过程中并没有做到简洁，显著地提高了程序的复杂度，带来了潜在的问题。</p>
+<h2 id="六、大模型使用情况"><a href="#六、大模型使用情况" class="headerlink" title="六、大模型使用情况"></a>六、大模型使用情况</h2><p>在第一次作业中，因为要实现从无到有的搭建，我耗费了较多时间，在此过程中我不断让大模型举例说明如何用递归下降法解析表达式。在后两次作业中，大模型也帮我设计了用栈来解决函数调用的问题。我认为大模型的优点是知识很全面，我们可以在对话中很迅速地学到java中的一些语法和设计模式，并判断出哪些更适合运用到我们的架构中。但是在少数情况下，大模型有“过度设计”之嫌，代码的复杂度往往更高。<br>在测试方面，我每次都会让大模型帮我生成尽可能全面的样例来测试我的程序，也会让大模型帮我检查互测房间其他同学的代码。一般情况下它能比较好地检查出逻辑错误，但是复杂度、优化方面提出的方案却不尽人意，也很难针对复杂度构造出极端样例。<br>我暂时未发现互测房间的同学有明显使用AI生成代码的现象。</p>
+<h2 id="七、心得体会"><a href="#七、心得体会" class="headerlink" title="七、心得体会"></a>七、心得体会</h2><h3 id="7-1-面向对象设计的力量"><a href="#7-1-面向对象设计的力量" class="headerlink" title="7.1 面向对象设计的力量"></a>7.1 面向对象设计的力量</h3><p>通过三次迭代，我真正体会到了好的架构带来的好处和“开闭原则”的价值。访问者模式让我能够在不修改已有类的情况下添加新功能，每次迭代只需新增类和对应的 visit 方法。虽然最初理解访问者模式有些吃力，但一旦掌握，代码的扩展性变得非常清晰。</p>
+<h3 id="7-2-复杂度的控制"><a href="#7-2-复杂度的控制" class="headerlink" title="7.2 复杂度的控制"></a>7.2 复杂度的控制</h3><p>在学习这单元之前，我其实并不太关注复杂度，觉得只要保持正确性就可以了。但是一方面，这单元的代码体量比较大，如果我们不控制复杂度，可能会导致代码可读性非常差，调试修复也非常困难（bug修复时难以达到5行以内的要求）；另一方面，复杂度太高的代码会留下可乘之机，更容易出现TLE,RE的bug。所以我们在编写程序的过程中有意识地控制复杂度是非常有必要的。</p>
+<h2 id="八、未来方向"><a href="#八、未来方向" class="headerlink" title="八、未来方向"></a>八、未来方向</h2><p>我认为第一单元的内容对我们的挑战比较大，但总体来说目前第一单元的课程设置已经比较好。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://AddCloud330.github.io">AddCloud</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://addcloud330.github.io/2026/07/11/OO-U1/">https://addcloud330.github.io/2026/07/11/OO-U1/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://AddCloud330.github.io" target="_blank">Echoes of the Cloud</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/OO/">OO</a></div><div class="post-share"><div class="social-share" data-image="/img/avatar.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/07/11/CO-P5/" title="P5-Verilog五级流水线CPU"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">P5-Verilog五级流水线CPU</div></div><div class="info-2"><div class="info-item-1">一、设计草稿1.模块与划分将单周期CPU改造为五级流水线CPU，采用分布式译码，划分为F,D,E,M,W五级，各级设立单独的Controller，并在各级间添加流水线寄存器。 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475module Controller(    input wire [5:0] op,    input wire [5:0] funct,    output wire [1:0] RegDst,    output wire ALUSrc,    output wire [1:0] Mem2Reg,    output wire RegWrite,    output wire MemWrite,    output wire [2:0] nPC_sel,    output wire [2:0] ALUOp,    outpu...</div></div></div></a><a class="pagination-related" href="/2026/07/11/CO-P6/" title="P6-新增功能"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">P6-新增功能</div></div><div class="info-2"><div class="info-item-1">新增模块1. 乘除模块   信号名 方向 描述    clk I 时钟信号   reset I 复位信号   A[31:0] I 第一个运算数   B[31:0] I 第二个运算数   type I 指令类型   C[31:0] O 输出结果   start O 乘除运算开始的标志   busy O 乘除运算正在进行的标志   1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374module MDU(    input wire clk,    input wire reset,    input wire [31:0] A,    input wire [31:0] B,    input wire [4:0] type,    output wire [31:0] C,    output wire start,    output wire busy ...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/07/11/OO-U4/" title="OO-U4总结"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">OO-U4总结</div></div><div class="info-2"><div class="info-item-1">一、正向建模与两阶类图本单元最大的改变不是新增了多少需求，而是开发流程本身被重新定义了——先画图，再写代码；一阶类图是设计承诺，是最初的构想，二阶类图则需要根据实现情况进行设计修正，两者之间必须有可追踪的演化路径。 1. 一阶类图一阶类图在代码之前提交，那时对需求的理解往往还不完整，画出的一阶类图也不够具体、不够完整。但是它帮助我们对整体有一个把握，迫使我们在信息不充分时做出设计决策。 对我来说，一阶类图的核心作用是建立骨架。在 U4 中，我首先识别出六个核心地点类（Bookshelf、TreasuredBookshelf、BorrowReturnOffice、AppointmentOffice、ReadingRoom、GradeManager）以及它们与 LibraryManager 的聚合关系。这些类的类名直接来自需求中的名词，几乎不需要创造性思考，但把它们画出来之后，系统的边界就清晰了。 而且，一阶类图可以提醒我现在还有哪些细节是不清楚的、需要进一步注意和确认的。比如在第一次画图时，我对 AppointmentOffice 中预约图书的过期逻辑只有模糊概念，类图中的 rem...</div></div></div></a><a class="pagination-related" href="/2026/07/11/OO-U3/" title="OO-U3总结"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">OO-U3总结</div></div><div class="info-2"><div class="info-item-1">一、对 JML 和规格驱动开发的理解JML 是一种形式化的规格描述语言，它将“契约式设计”落到 Java 代码上。通过 requires、ensures、assignable、signals 等关键字，我们能精确地定义方法的前置条件（调用者的义务）、后置条件（实现者的承诺）、副作用（允许修改的范围）以及异常行为。 规格驱动开发的核心价值在于：  消除二义性。自然语言中的“通常”“尽量”等模糊词在 JML 中不复存在。 设计与实现分离。可以先写规格，再写实现，测试也基于规格，保证正确性。 支持自动化验证。结合 JUnit 和工具链，可以自动检查实现是否满足规格。  三次作业下来，我深刻体会到：好的规格非常有用，让调用者和实现者各司其职，一旦违反契约，要么是调用方输入不合法（抛异常），要么是实现方逻辑有误（测试失败）。这种“按契约编程”的思维方式，让代码的可靠性有了坚实的理论支撑。 二、JUnit 测试经验在实践“基于规格的自动化测试”的过程中，我积累了以下方法：  状态快照 + 副作用验证在 TestNetwork 中，我编写了 assertJMLBehavior() 方法：每次调...</div></div></div></a><a class="pagination-related" href="/2026/07/11/OO-U2/" title="OO-U2总结"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">OO-U2总结</div></div><div class="info-2"><div class="info-item-1">一、同步块与锁的三次迭代分析本单元三次作业的迭代中，我经历了从使用单一锁到设计多把协同锁，再到让全局锁与局部锁精密配合的过程，对同步块和锁的运用有了更深的体会。整个设计始终遵循仅在需要守护的共享对象上设置同步块，让“房间”和“锁”精确匹配。 hw5：以共享对象为中心，采用简单锁基本只有一种锁，即 RequestQueue 自身的 synchronized 方法或 synchronized (waitQueue) 块。所有对请求容器的“读-改-写”操作均封装在 RequestQueue 内部，如 addRequest、getOneRequest、pickReq 等方法均为 synchronized ，保证了操作的原子性。线程间的等待&#x2F;唤醒通过 waitQueue.wait() 和 waitQueue.notifyAll() 实现，使用典型的条件等待范式 while (waitQueue.isEmpty() &amp;&amp; !waitQueue.isEnd()) 确保线程被唤醒后重新校验条件。这种设计能保证数据与其锁绑定，任何线程想操作数据就必须先拿到该数据对象的锁。...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">AddCloud</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">17</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">3</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">1</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">一、前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%A8%8B%E5%BA%8F%E7%BB%93%E6%9E%84%E5%BA%A6%E9%87%8F%E5%88%86%E6%9E%90"><span class="toc-number">2.</span> <span class="toc-text">二、程序结构度量分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E6%80%BB%E4%BD%93%E6%83%85%E5%86%B5"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 总体情况</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E7%B1%BB%E5%88%86%E6%9E%90"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 类分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-%E5%A4%8D%E6%9D%82%E5%BA%A6%E5%88%86%E6%9E%90"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 复杂度分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-%E4%BB%A3%E7%A0%81%E8%A7%84%E6%A8%A1%E5%88%86%E6%9E%90"><span class="toc-number">2.4.</span> <span class="toc-text">2.4 代码规模分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5-%E8%80%A6%E5%90%88%E5%BA%A6%E5%88%86%E6%9E%90"><span class="toc-number">2.5.</span> <span class="toc-text">2.5 耦合度分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-6-%E6%80%BB%E7%BB%93"><span class="toc-number">2.6.</span> <span class="toc-text">2.6 总结</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1%E4%BD%93%E9%AA%8C"><span class="toc-number">3.</span> <span class="toc-text">三、架构设计体验</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E4%B8%89%E6%AC%A1%E8%BF%AD%E4%BB%A3%E7%9A%84%E6%9E%B6%E6%9E%84%E6%BC%94%E8%BF%9B"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 三次迭代的架构演进</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E5%8F%AF%E6%89%A9%E5%B1%95%E6%80%A7%E8%AE%BE%E6%83%B3"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 可扩展性设想</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81Bug-%E5%88%86%E6%9E%90"><span class="toc-number">4.</span> <span class="toc-text">四、Bug 分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E6%88%91%E9%81%87%E5%88%B0%E7%9A%84-Bug"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 我遇到的 Bug</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-Bug-%E4%B8%8E%E5%A4%8D%E6%9D%82%E5%BA%A6%E5%85%B3%E7%B3%BB"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 Bug 与复杂度关系</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E4%BA%92%E6%B5%8B%E7%AD%96%E7%95%A5"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 互测策略</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%BC%98%E5%8C%96"><span class="toc-number">5.</span> <span class="toc-text">五、优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 性能优化</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E6%AD%A3%E7%A1%AE%E6%80%A7%E5%92%8C%E7%AE%80%E6%B4%81%E6%80%A7"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 正确性和简洁性</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E5%A4%A7%E6%A8%A1%E5%9E%8B%E4%BD%BF%E7%94%A8%E6%83%85%E5%86%B5"><span class="toc-number">6.</span> <span class="toc-text">六、大模型使用情况</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E5%BF%83%E5%BE%97%E4%BD%93%E4%BC%9A"><span class="toc-number">7.</span> <span class="toc-text">七、心得体会</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#7-1-%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%E8%AE%BE%E8%AE%A1%E7%9A%84%E5%8A%9B%E9%87%8F"><span class="toc-number">7.1.</span> <span class="toc-text">7.1 面向对象设计的力量</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-2-%E5%A4%8D%E6%9D%82%E5%BA%A6%E7%9A%84%E6%8E%A7%E5%88%B6"><span class="toc-number">7.2.</span> <span class="toc-text">7.2 复杂度的控制</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E6%9C%AA%E6%9D%A5%E6%96%B9%E5%90%91"><span class="toc-number">8.</span> <span class="toc-text">八、未来方向</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P4/" title="P4-Verilog单周期CPU">P4-Verilog单周期CPU</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P3/" title="P3-Logisim单周期CPU">P3-Logisim单周期CPU</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P7/" title="P7-异常中断和外设">P7-异常中断和外设</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P6/" title="P6-新增功能">P6-新增功能</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/OO-U1/" title="OO-U1总结">OO-U1总结</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By AddCloud</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"></div><style>
+/* ===== 整体背景 ===== */
+body {
+  background: #FDF5F5 !important;
+  background-image: url('https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/bg.png') !important;
+  background-size: cover !important;
+  background-attachment: fixed !important;
+  background-position: center center !important;
+  background-repeat: no-repeat center;
+}
+/* ===== 针对手机竖屏，重新定位左侧人物 ===== */
+@media screen and (max-width: 768px) {
+  body {
+    /* 调整这个百分比，直到人物脸部完全显示 */
+    background-position: 20% 50% !important;
+  }
+}
+/* ===== 毛玻璃卡片效果 ===== */
+#recent-posts > .recent-post-item,
+.layout > .recent-posts > .recent-post-item,
+.layout > div:not(.recent-posts) {
+  background: rgba(255, 248, 248, 0.55) !important;
+  backdrop-filter: blur(12px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(1.4) !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 8px 32px rgba(200, 160, 180, 0.18) !important;
+  transition: all 0.4s ease !important;
+}
+#recent-posts > .recent-post-item:hover,
+.layout > div:not(.recent-posts):hover {
+  background: rgba(255, 248, 248, 0.70) !important;
+  box-shadow: 0 12px 48px rgba(200, 160, 180, 0.28) !important;
+  transform: translateY(-2px) !important;
+}
+/* ===== 标题文字风格 ===== */
+#site-title {
+  font-family: 'Georgia', 'Noto Serif SC', serif !important;
+  font-weight: 300 !important;
+  letter-spacing: 6px !important;
+  color: #F5E0E0 !important;
+  text-shadow: 0 2px 20px rgba(200, 150, 160, 0.5) !important;
+}
+#site-subtitle {
+  font-family: 'Georgia', 'Noto Serif SC', serif !important;
+  font-weight: 200 !important;
+  letter-spacing: 8px !important;
+  color: rgba(255, 240, 240, 0.85) !important;
+  text-shadow: 0 2px 16px rgba(180, 140, 150, 0.4) !important;
+}
+/* ===== 文章标题 ===== */
+.post-title {
+  font-family: 'Georgia', 'Noto Serif SC', serif !important;
+  font-weight: 400 !important;
+  letter-spacing: 2px !important;
+}
+.post-meta {
+  color: #C8A8B0 !important;
+  font-size: 14px !important;
+}
+/* ===== 链接颜色 ===== */
+a {
+  color: #D4A0A8 !important;
+  transition: color 0.3s ease !important;
+}
+a:hover {
+  color: #E8B0B8 !important;
+}
+/* ===== 侧边栏头像 ===== */
+.avatar-img {
+  border: 3px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 4px 24px rgba(200, 160, 180, 0.3) !important;
+}
+/* ===== 滚动条（浅粉） ===== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 245, 245, 0.6);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #F5C4C4;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E8B0B0;
+}
+/* ===== 选中文字颜色 ===== */
+::selection {
+  background: #F5C4C4 !important;
+  color: #FFFFFF !important;
+}
+/* ===== 顶部导航栏透明毛玻璃 ===== */
+#nav {
+  background: rgba(255, 248, 248, 0.35) !important;
+  backdrop-filter: blur(16px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.4) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 2px 24px rgba(200, 160, 180, 0.08) !important;
+}
+#nav .site-page {
+  color: #F5E8E8 !important;
+  text-shadow: 0 1px 8px rgba(180, 140, 150, 0.3) !important;
+}
+#nav .site-page:hover {
+  color: #FFFFFF !important;
+}
+/* ===== 页脚 ===== */
+#footer {
+  background: rgba(255, 248, 248, 0.30) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #E8D0D0 !important;
+  text-shadow: 0 1px 8px rgba(180, 140, 150, 0.2) !important;
+}
+#footer a {
+  color: #E8C8C8 !important;
+}
+#footer a:hover {
+  color: #F5E0E0 !important;
+}
+/* ===== 代码块圆角柔和 ===== */
+.highlight {
+  border-radius: 16px !important;
+  box-shadow: 0 4px 20px rgba(200, 160, 180, 0.10) !important;
+}
+/* ===== 首页标题区域透明 ===== */
+#page-header, 
+#page-header:before,
+.page-header,
+.not-home-page #page-header,
+.post #page-header {
+  background-image: none !important;          /* 关键：去掉图片 */
+  background: transparent !important;         /* 清除所有背景 */
+  background-color: transparent !important;   /* 确保颜色透明 */
+}
+/* ===== 右侧边栏 "Follow Me" 按钮 ===== */
+.author-info__sayhi .btn,
+#aside-content .card_author .btn {
+  background: rgba(245, 196, 196, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  color: #FFFFFF !important;
+  border-radius: 30px !important;
+  backdrop-filter: blur(4px) !important;
+  box-shadow: 0 2px 12px rgba(200, 160, 180, 0.2) !important;
+  transition: all 0.4s ease !important;
+}
+.author-info__sayhi .btn:hover,
+#aside-content .card_author .btn:hover {
+  background: rgba(245, 196, 196, 0.95) !important;
+  transform: scale(1.04) !important;
+  box-shadow: 0 4px 20px rgba(200, 160, 180, 0.4) !important;
+}
+/* ===== 按钮风格 ===== */
+.btn-beautify {
+  background: rgba(245, 196, 196, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 30px !important;
+  backdrop-filter: blur(4px) !important;
+  color: #FFFFFF !important;
+}
+.btn-beautify:hover {
+  background: rgba(245, 196, 196, 0.85) !important;
+  transform: scale(1.02) !important;
+}
+</style>
+<script>
+(function() {
+  const count = 25;                    // 花瓣数量（减少）
+  const container = document.body;
+  const petalImg = '/img/petal.png';   // 你的单瓣图片路径
+
+  // 注入动画关键帧
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes petalFall {
+      0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.9; }
+      100% { transform: translateY(${window.innerHeight + 120}px) rotate(720deg) scale(0.5); opacity: 0.1; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  function createPetal(index) {
+    const petal = document.createElement('img');
+    // 均匀分布：把 0~100% 分成 count 份，每份的中心点，加上随机偏移 ±4%
+    const baseLeft = (index / count) * 100;
+    const randomOffset = (Math.random() - 0.5) * 8; // -4% ~ +4%
+    const left = Math.min(100, Math.max(0, baseLeft + randomOffset)); // 限制范围
+
+    const size = 22 + Math.random() * 18;     // 22~40px（保持适中）
+    const duration = 12 + Math.random() * 14; // 12~26 秒（更慢）
+    const delay = Math.random() * 10;         // 0~10 秒延迟（更分散）
+    const rotation = Math.random() * 360;
+
+    petal.src = petalImg;
+    petal.style.cssText = `
+      position: fixed;
+      top: -30px;
+      left: ${left}%;
+      width: ${size}px;
+      height: auto;
+      pointer-events: none;
+      z-index: 99999;
+      transform: rotate(${rotation}deg);
+      animation: petalFall ${duration}s linear ${delay}s infinite;
+      opacity: 0.85;
+    `;
+    container.appendChild(petal);
+  }
+
+  // 生成花瓣（按顺序生成，位置均匀分布）
+  for (let i = 0; i < count; i++) {
+    createPetal(i);
+  }
+
+  // 窗口大小变化时更新动画终点
+  window.addEventListener('resize', function() {
+    const existingStyle = document.querySelector('style[data-petal]');
+    if (existingStyle) {
+      existingStyle.textContent = `
+        @keyframes petalFall {
+          0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.9; }
+          100% { transform: translateY(${window.innerHeight + 120}px) rotate(720deg) scale(0.5); opacity: 0.1; }
+        }
+      `;
+    }
+  });
+})();
+</script>
+<script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

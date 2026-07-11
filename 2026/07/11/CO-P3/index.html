@@ -1,0 +1,816 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>P3-Logisim单周期CPU | Echoes of the Cloud</title><meta name="author" content="AddCloud"><meta name="copyright" content="AddCloud"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="ffffff"><meta name="description" content="设计草稿  模块规格1.IFU（取指令单元）（1）模块接口    信号名 方向 描述    clk I 时钟信号   reset I 异步复位信号   nPC_sel I nPC的选择信号（1代表beq指令，0代表其他指令）   zero I beq指令的选择信号（1代表跳转）   ext_imm[31:0] I beq指令的偏移量   PC[31:0] O 输出程序计数器的当前值   Instr">
+<meta property="og:type" content="article">
+<meta property="og:title" content="P3-Logisim单周期CPU">
+<meta property="og:url" content="https://addcloud330.github.io/2026/07/11/CO-P3/index.html">
+<meta property="og:site_name" content="Echoes of the Cloud">
+<meta property="og:description" content="设计草稿  模块规格1.IFU（取指令单元）（1）模块接口    信号名 方向 描述    clk I 时钟信号   reset I 异步复位信号   nPC_sel I nPC的选择信号（1代表beq指令，0代表其他指令）   zero I beq指令的选择信号（1代表跳转）   ext_imm[31:0] I beq指令的偏移量   PC[31:0] O 输出程序计数器的当前值   Instr">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://addcloud330.github.io/img/avatar.png">
+<meta property="article:published_time" content="2026-07-11T10:10:51.000Z">
+<meta property="article:modified_time" content="2026-07-11T11:33:45.227Z">
+<meta property="article:author" content="AddCloud">
+<meta property="article:tag" content="CO">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://addcloud330.github.io/img/avatar.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "P3-Logisim单周期CPU",
+  "url": "https://addcloud330.github.io/2026/07/11/CO-P3/",
+  "image": "https://addcloud330.github.io/img/avatar.png",
+  "datePublished": "2026-07-11T10:10:51.000Z",
+  "dateModified": "2026-07-11T11:33:45.227Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "AddCloud",
+      "url": "https://AddCloud330.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://addcloud330.github.io/2026/07/11/CO-P3/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'P3-Logisim单周期CPU',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@200;300;400;600&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Echoes of the Cloud</span></a><a class="nav-page-title" href="/"><span class="site-name">P3-Logisim单周期CPU</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">P3-Logisim单周期CPU</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-07-11T11:33:45.227Z" title="更新于 2026-07-11 19:33:45">2026-07-11</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%AF%BE%E7%A8%8B/">课程</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h2 id="设计草稿"><a href="#设计草稿" class="headerlink" title="设计草稿"></a>设计草稿</h2><hr>
+<p><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/top%20module.png" alt="顶层设计"></p>
+<h3 id="模块规格"><a href="#模块规格" class="headerlink" title="模块规格"></a>模块规格</h3><h4 id="1-IFU（取指令单元）"><a href="#1-IFU（取指令单元）" class="headerlink" title="1.IFU（取指令单元）"></a>1.IFU（取指令单元）</h4><p>（1）模块接口</p>
+<table>
+<thead>
+<tr>
+<th align="center">信号名</th>
+<th align="center">方向</th>
+<th align="center">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"><code>clk</code></td>
+<td align="center">I</td>
+<td align="center">时钟信号</td>
+</tr>
+<tr>
+<td align="center"><code>reset</code></td>
+<td align="center">I</td>
+<td align="center">异步复位信号</td>
+</tr>
+<tr>
+<td align="center"><code>nPC_sel</code></td>
+<td align="center">I</td>
+<td align="center"><code>nPC</code>的选择信号（1代表<code>beq</code>指令，0代表其他指令）</td>
+</tr>
+<tr>
+<td align="center"><code>zero</code></td>
+<td align="center">I</td>
+<td align="center"><code>beq</code>指令的选择信号（1代表跳转）</td>
+</tr>
+<tr>
+<td align="center"><code>ext_imm[31:0]</code></td>
+<td align="center">I</td>
+<td align="center"><code>beq</code>指令的偏移量</td>
+</tr>
+<tr>
+<td align="center"><code>PC[31:0]</code></td>
+<td align="center">O</td>
+<td align="center">输出程序计数器的当前值</td>
+</tr>
+<tr>
+<td align="center"><code>Instr[31:0]</code></td>
+<td align="center">O</td>
+<td align="center">输出下一条指令的32位二进制码</td>
+</tr>
+</tbody></table>
+<p>（2）功能定义</p>
+<table>
+<thead>
+<tr>
+<th align="center">序号</th>
+<th align="center">功能名称</th>
+<th align="center">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">1</td>
+<td align="center">复位</td>
+<td align="center"><code>reset</code>信号有效时，<code>PC</code>数值回到初始值（0x00003000）</td>
+</tr>
+<tr>
+<td align="center">2</td>
+<td align="center">取下一条指令</td>
+<td align="center"><code>nPC_sel</code>&#x3D;0（非beq指令）或者<code>zero</code>&#x3D;0时，<code>PC</code>&#x3D;<code>PC</code>+4，<code>Instr</code>顺序取得下一条指令</td>
+</tr>
+<tr>
+<td align="center">3</td>
+<td align="center">跳转</td>
+<td align="center"><code>nPC_sel</code>&#x3D;1（<code>beq</code>指令）且<code>zero</code>&#x3D;0（<code>A</code>&#x3D;<code>B</code>）时，<code>PC</code>&#x3D;<code>PC</code>+4+4*<code>ext_imm</code>，<code>Instr</code>取得跳转地址处的指令，实现跳转</td>
+</tr>
+</tbody></table>
+<p>（3）电路实现<br><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/IFU.png" alt="IFU模块电路"></p>
+<h4 id="2-ALU（计算单元）"><a href="#2-ALU（计算单元）" class="headerlink" title="2.ALU（计算单元）"></a>2.ALU（计算单元）</h4><p>（1）模块接口</p>
+<table>
+<thead>
+<tr>
+<th align="center">信号名</th>
+<th align="center">方向</th>
+<th align="center">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"><code>A[31:0]</code></td>
+<td align="center">I</td>
+<td align="center">第一个操作数</td>
+</tr>
+<tr>
+<td align="center"><code>B[31:0]</code></td>
+<td align="center">I</td>
+<td align="center">第二个操作数</td>
+</tr>
+<tr>
+<td align="center"><code>op[1:0]</code></td>
+<td align="center">I</td>
+<td align="center">运算符选择信号</td>
+</tr>
+<tr>
+<td align="center"><code>C[31:0]</code></td>
+<td align="center">O</td>
+<td align="center">运算结果</td>
+</tr>
+<tr>
+<td align="center"><code>zero</code></td>
+<td align="center">O</td>
+<td align="center"><code>A</code>&#x3D;&#x3D;<code>B</code></td>
+</tr>
+</tbody></table>
+<p>（2）功能定义</p>
+<table>
+<thead>
+<tr>
+<th align="center">序号</th>
+<th align="center">功能名称</th>
+<th align="center">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">1</td>
+<td align="center">判断A,B是否相等</td>
+<td align="center"><code>zero</code>&#x3D;(<code>A</code>&#x3D;&#x3D;<code>B</code>)</td>
+</tr>
+<tr>
+<td align="center">2</td>
+<td align="center">左移16位</td>
+<td align="center"><code>op</code>&#x3D;00时，<code>C</code>&#x3D;<code>B</code>&lt;&lt;16</td>
+</tr>
+<tr>
+<td align="center">3</td>
+<td align="center">加</td>
+<td align="center"><code>op</code>&#x3D;01时，<code>C</code>&#x3D;<code>A</code>+<code>B</code></td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td align="center">减</td>
+<td align="center"><code>op</code>&#x3D;10时，<code>C</code>&#x3D;<code>A</code>-<code>B</code></td>
+</tr>
+<tr>
+<td align="center">5</td>
+<td align="center">或</td>
+<td align="center"><code>op</code>&#x3D;11时，<code>C</code>&#x3D;<code>A</code></td>
+</tr>
+</tbody></table>
+<p>（3）电路实现<br><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/ALU.png" alt="ALU模块电路"></p>
+<h4 id="3-Ext（扩展单元）"><a href="#3-Ext（扩展单元）" class="headerlink" title="3.Ext（扩展单元）"></a>3.Ext（扩展单元）</h4><p>（1）模块接口</p>
+<table>
+<thead>
+<tr>
+<th align="center">信号名</th>
+<th align="center">方向</th>
+<th align="center">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"><code>imm[15:0]</code></td>
+<td align="center">I</td>
+<td align="center">待扩展的立即数</td>
+</tr>
+<tr>
+<td align="center"><code>ExtOp</code></td>
+<td align="center">I</td>
+<td align="center">扩展方式</td>
+</tr>
+<tr>
+<td align="center"><code>ext_imm[31:0]</code></td>
+<td align="center">O</td>
+<td align="center">扩展得到的结果</td>
+</tr>
+</tbody></table>
+<p>（2）功能定义</p>
+<table>
+<thead>
+<tr>
+<th align="center">序号</th>
+<th align="center">功能名称</th>
+<th align="center">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">1</td>
+<td align="center">零扩展</td>
+<td align="center"><code>ext_imm</code>&#x3D;{{15{1'b0}},`imm`}</td>
+</tr>
+<tr>
+<td align="center">2</td>
+<td align="center">符号扩展</td>
+<td align="center"><code>ext_imm</code>&#x3D;{{15{`imm[15]`}},`imm`}</td>
+</tr>
+</tbody></table>
+<p>（3）电路实现<br><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/Ext.png" alt="Ext电路模块"></p>
+<h4 id="4-GRF（寄存器堆）"><a href="#4-GRF（寄存器堆）" class="headerlink" title="4.GRF（寄存器堆）"></a>4.GRF（寄存器堆）</h4><p>（1）模块接口</p>
+<table>
+<thead>
+<tr>
+<th align="center">信号名</th>
+<th align="center">方向</th>
+<th align="center">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"><code>clk</code></td>
+<td align="center">I</td>
+<td align="center">时钟信号</td>
+</tr>
+<tr>
+<td align="center"><code>reset</code></td>
+<td align="center">I</td>
+<td align="center">异步复位信号</td>
+</tr>
+<tr>
+<td align="center"><code>WE</code></td>
+<td align="center">I</td>
+<td align="center">写使能信号（1表示可写入）</td>
+</tr>
+<tr>
+<td align="center"><code>A1[4:0]</code></td>
+<td align="center">I</td>
+<td align="center">输入地址，将指定寄存器中存储的数据输入到<code>RD1</code></td>
+</tr>
+<tr>
+<td align="center"><code>A2[4:0]</code></td>
+<td align="center">I</td>
+<td align="center">输入地址，将指定寄存器中存储的数据输入到<code>RD2</code></td>
+</tr>
+<tr>
+<td align="center"><code>A3[4:0]</code></td>
+<td align="center">I</td>
+<td align="center">输入地址，指定写入的目标寄存器</td>
+</tr>
+<tr>
+<td align="center"><code>RD1[31:0]</code></td>
+<td align="center">O</td>
+<td align="center">输出<code>A1</code>指定的寄存器中的32位数据</td>
+</tr>
+<tr>
+<td align="center"><code>RD2[31:0]</code></td>
+<td align="center">O</td>
+<td align="center">输出<code>A2</code>指定的寄存器中的32位数据</td>
+</tr>
+</tbody></table>
+<p>（2）功能定义</p>
+<table>
+<thead>
+<tr>
+<th align="center">序号</th>
+<th align="center">功能名称</th>
+<th align="center">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">1</td>
+<td align="center">复位</td>
+<td align="center"><code>reset</code>信号有效时，所有寄存器存储的数值清零</td>
+</tr>
+<tr>
+<td align="center">2</td>
+<td align="center">读数据</td>
+<td align="center">读出<code>A1</code>,<code>A2</code>地址对应的寄存器中所存储的数据到<code>RD1</code>，<code>RD2</code></td>
+</tr>
+<tr>
+<td align="center">3</td>
+<td align="center">写数据</td>
+<td align="center"><code>WE</code>有效且时钟上升沿到来时，将<code>WD</code>写入<code>A3</code>所对应的寄存器中</td>
+</tr>
+</tbody></table>
+<p>（3）电路实现<br><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/GRF.png" alt="GRF电路模块"></p>
+<h4 id="5-Controller（指令解析单元）"><a href="#5-Controller（指令解析单元）" class="headerlink" title="5.Controller（指令解析单元）"></a>5.Controller（指令解析单元）</h4><p>（1）模块接口</p>
+<table>
+<thead>
+<tr>
+<th align="center">信号名</th>
+<th align="center">方向</th>
+<th align="center">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"><code>op[5:0]</code></td>
+<td align="center">I</td>
+<td align="center"><code>Instr</code>的<code>op</code>字段，即Instr[26:31]</td>
+</tr>
+<tr>
+<td align="center"><code>funct[5:0]</code></td>
+<td align="center">I</td>
+<td align="center"><code>Instr</code>的<code>funct</code>字段，即Instr[5:0]</td>
+</tr>
+<tr>
+<td align="center"><code>RegDst</code></td>
+<td align="center">O</td>
+<td align="center">GRF的<code>A3</code>输入端口选择信号<br>0:写入<code>rt</code>寄存器<br>1:写入<code>rd</code>寄存器</td>
+</tr>
+<tr>
+<td align="center"><code>ALUSrc</code></td>
+<td align="center">O</td>
+<td align="center">ALU的<code>B</code>输入端口选择信号<br>0:<code>rt</code>寄存器存储的值<code>RD2</code><br>1:扩展后的立即数<code>ext_imm</code></td>
+</tr>
+<tr>
+<td align="center"><code>Mem2Reg</code></td>
+<td align="center">O</td>
+<td align="center">GRF的WD输入端口选择信号<br>0:ALU运算结果C<br>1:Mem中读取的data</td>
+</tr>
+<tr>
+<td align="center"><code>RegWrite</code></td>
+<td align="center">O</td>
+<td align="center">GRF写入使能信号</td>
+</tr>
+<tr>
+<td align="center"><code>MemWrite</code></td>
+<td align="center">O</td>
+<td align="center">Mem写入使能信号</td>
+</tr>
+<tr>
+<td align="center"><code>nPC_sel</code></td>
+<td align="center">O</td>
+<td align="center">nPC的选择信号<br>1:<code>beq</code>指令<br>0:其他指令</td>
+</tr>
+<tr>
+<td align="center"><code>ExtOp</code></td>
+<td align="center">O</td>
+<td align="center">扩展单元选择信号<br>0:零扩展<br>1:符号扩展</td>
+</tr>
+<tr>
+<td align="center"><code>ALUOp[1:0]</code></td>
+<td align="center">O</td>
+<td align="center">运算符选择信号<br>00:左移<br>01:加<br>10:减<br>11:或<br></td>
+</tr>
+</tbody></table>
+<p>（2）功能定义</p>
+<table>
+<thead>
+<tr>
+<th align="center">序号</th>
+<th align="center">功能名称</th>
+<th align="center"><code>op</code></th>
+<th align="center"><code>funct</code></th>
+<th align="center">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">0</td>
+<td align="center"><code>nop</code>或其他指令</td>
+<td align="center">000000</td>
+<td align="center">000000</td>
+<td align="center">不产生任何影响<br><code>RegWrite</code>&#x3D;0<br><code>MemWrite</code>&#x3D;0<br><code>nPC_sel</code>&#x3D;0</td>
+</tr>
+<tr>
+<td align="center">1</td>
+<td align="center"><code>add</code></td>
+<td align="center">000000</td>
+<td align="center">100000</td>
+<td align="center"><code>$rd</code>&#x3D;<code>$rs</code>+<code>$rt</code><br><code>RegDst</code>&#x3D;1<br><code>ALUSrc</code>&#x3D;0<br><code>Mem2Reg</code>&#x3D;0<br><code>RegWrite</code>&#x3D;1<br><code>MemWrite</code>&#x3D;0<br><code>nPC_sel</code>&#x3D;0<br><code>ALUOp</code>&#x3D;01</td>
+</tr>
+<tr>
+<td align="center">2</td>
+<td align="center"><code>sub</code></td>
+<td align="center">000000</td>
+<td align="center">100010</td>
+<td align="center"><code>$rd</code>&#x3D;<code>$rs</code>-<code>$rt</code><br><code>RegDst</code>&#x3D;1<br><code>ALUSrc</code>&#x3D;0<br><code>Mem2Reg</code>&#x3D;0<br><code>RegWrite</code>&#x3D;1<br><code>MemWrite</code>&#x3D;0<br><code>nPC_sel</code>&#x3D;0<br><code>ALUOp</code>&#x3D;10</td>
+</tr>
+<tr>
+<td align="center">3</td>
+<td align="center"><code>ori</code></td>
+<td align="center">001101</td>
+<td align="center">-</td>
+<td align="center"><code>$rt</code>&#x3D;<code>$rs</code>|<code>ext_imm</code><br><code>RegDst</code>&#x3D;0<br><code>ALUSrc</code>&#x3D;1<br><code>Mem2Reg</code>&#x3D;0<br><code>RegWrite</code>&#x3D;1<br><code>MemWrite</code>&#x3D;0<br><code>nPC_sel</code>&#x3D;0<br><code>ExtOp</code>&#x3D;0<br><code>ALUOp</code>&#x3D;11</td>
+</tr>
+<tr>
+<td align="center">4</td>
+<td align="center"><code>lw</code></td>
+<td align="center">100011</td>
+<td align="center">-</td>
+<td align="center"><code>$rt</code>&#x3D;<code>Mem</code>[<code>$rs</code>+<code>ext_imm</code>]<br><code>RegDst</code>&#x3D;0<br><code>ALUSrc</code>&#x3D;1<br><code>Mem2Reg</code>&#x3D;1<br><code>RegWrite</code>&#x3D;1<br><code>MemWrite</code>&#x3D;0<br><code>nPC_sel</code>&#x3D;0<br><code>ExtOp</code>&#x3D;1<br><code>ALUOp</code>&#x3D;01</td>
+</tr>
+<tr>
+<td align="center">5</td>
+<td align="center"><code>sw</code></td>
+<td align="center">101011</td>
+<td align="center">-</td>
+<td align="center"><code>Mem</code>[<code>$rs</code>+<code>ext_imm</code>]&#x3D;<code>$rt</code><br><code>ALUSrc</code>&#x3D;1<br><code>RegWrite</code>&#x3D;0<br><code>MemWrite</code>&#x3D;1<br><code>nPC_sel</code>&#x3D;0<br><code>ExtOp</code>&#x3D;1<br><code>ALUOp</code>&#x3D;01</td>
+</tr>
+<tr>
+<td align="center">6</td>
+<td align="center"><code>beq</code></td>
+<td align="center">000100</td>
+<td align="center">-</td>
+<td align="center"><code>nPC</code>&#x3D;(<code>$rs</code>&#x3D;&#x3D;<code>$rt</code>)?<br><code>PC</code>+4+4*<code>ext_imm</code>:<br><code>PC</code>+4<br><code>ALUSrc</code>&#x3D;0<br><code>RegWrite</code>&#x3D;0<br><code>MemWrite</code>&#x3D;0<br><code>nPC_sel</code>&#x3D;1<br><code>ExtOp</code>&#x3D;1</td>
+</tr>
+<tr>
+<td align="center">7</td>
+<td align="center"><code>lui</code></td>
+<td align="center">001111</td>
+<td align="center">-</td>
+<td align="center"><code>$rt</code>&#x3D;{<code>imm</code>,{16{1’b0}}}<br>即<code>$rt</code>&#x3D;<code>ext_imm</code>&lt;&lt;16<br><code>RegDst</code>&#x3D;0<br><code>ALUSrc</code>&#x3D;1<br><code>Mem2Reg</code>&#x3D;0<br><code>RegWrite</code>&#x3D;1<br><code>MemWrite</code>&#x3D;0<br><code>nPC_sel</code>&#x3D;0<br><code>ExtOp</code>&#x3D;0<br><code>ALUOp</code>&#x3D;00</td>
+</tr>
+</tbody></table>
+<p>（3）电路实现<br><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/Controller.png" alt="Controller电路模块"></p>
+<h2 id="测试方案"><a href="#测试方案" class="headerlink" title="测试方案"></a>测试方案</h2><hr>
+<h3 id="1-编写MIPS代码"><a href="#1-编写MIPS代码" class="headerlink" title="1.编写MIPS代码"></a>1.编写MIPS代码</h3><p>编写一段涵盖CPU所支持的所有指令的MIPS代码，并将有用的可供检验的数据存入内存中。例如：</p>
+<figure class="highlight plaintext"><figcaption><span>$0, $0, 123</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">ori $a0, $0, 123</span><br><span class="line">ori $a1, $a0, 456</span><br><span class="line">lui $a2, 123            # 符号位为 0</span><br><span class="line">nop</span><br><span class="line">lui $a3, 0xffff         # 符号位为 1</span><br><span class="line">ori $a3, $a3, 0xffff    # $a3 = -1</span><br><span class="line">add $s0, $a0, $a2      # 正正</span><br><span class="line">add $s1, $a0, $a3      # 正负</span><br><span class="line">add $s2, $a3, $a3      # 负负</span><br><span class="line">sub $s3, $a0, $a2      # 正正</span><br><span class="line">sub $s4, $a0, $a3      # 正负</span><br><span class="line">sub $s5, $a3, $a3      # 负负</span><br><span class="line">ori $t0, $0, 0x0014</span><br><span class="line">nop</span><br><span class="line">sw $a0, -20($t0)</span><br><span class="line">sw $a1, -16($t0)</span><br><span class="line">sw $a2, -12($t0)</span><br><span class="line">sw $a3, -8($t0)</span><br><span class="line">sw $s0, -4($t0)</span><br><span class="line">sw $s1, 0($t0)</span><br><span class="line">sw $s2, 4($t0)</span><br><span class="line">sw $s3, 8($t0)</span><br><span class="line">sw $s4, 12($t0)</span><br><span class="line">sw $s5, 16($t0)</span><br><span class="line">lw $a0, -20($t0)</span><br><span class="line">lw $a1, 4($t0)</span><br><span class="line">sw $a0, 20($t0)</span><br><span class="line">sw $a1, 24($t0)</span><br><span class="line">ori $a0, $0, 1</span><br><span class="line">ori $a1, $0, 2</span><br><span class="line">ori $a2, $0, 1</span><br><span class="line">beq $a0, $a1, loop1     # 不相等</span><br><span class="line">beq $a0, $a2, loop2     # 相等</span><br><span class="line">loop1:sw $a0, 28($t0)</span><br><span class="line">loop2:sw $a1, 32($t0)</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-导出机器码"><a href="#2-导出机器码" class="headerlink" title="2.导出机器码"></a>2.导出机器码</h3><p>在Mars的Execute界面选择Dump Memory to File功能，将代码对应的机器码导出到txt文件中，在txt文件的开头添加一行v2.0 raw，然后将其导入到设计好的CPU的指令存储ROM中。<br><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/MachineCode.png" alt="导出机器码"></p>
+<h3 id="3-运行CPU"><a href="#3-运行CPU" class="headerlink" title="3.运行CPU"></a>3.运行CPU</h3><p>运行Mars和CPU，将Mars显示的内存中存储的数据与Logisim中RAM中的数据逐一比较，若完全一致，则可在一定程度上说明CPU的正确性。<br><img src="https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/Comparison.png" alt="比较结果"></p>
+<h2 id="思考题解答"><a href="#思考题解答" class="headerlink" title="思考题解答"></a>思考题解答</h2><hr>
+<blockquote>
+<p>上面我们介绍了通过 FSM 理解单周期 CPU 的基本方法。请大家指出单周期 CPU 所用到的模块中，哪些发挥状态存储功能，哪些发挥状态转移功能。  </p>
+</blockquote>
+<p>IFU是一个FSM，且为Moore型状态机。其中PC寄存器发挥状态存储功能，Adder和Shifter等元件组成的计算nPC的部分发挥状态转移功能。<br>Splitter、Controller、GRF、ALU和Ext组成的也是一个FSM，且为Mealy型状态机。其中GRM发挥状态存储功能，Splitter和Controller将输入指令信号转化为选择信号，ALU和Ext进行运算，共同发挥状态转移功能。  </p>
+<blockquote>
+<p>现在我们的模块中 IM 使用 ROM， DM 使用 RAM， GRF 使用 Register，这种做法合理吗？ 请给出分析，若有改进意见也请一并给出。  </p>
+</blockquote>
+<p>我认为合理。首先，我们不希望在CPU运行过程中改变存储的指令，ROM只读不写的特性很符合我们的要求。其次，对于数据存储，需要较大的空间，且sw和lw指令分别对内存进行存取操作，应该选择既可读也可写的RAM。最后，我们需要对GRF进行频繁读写操作，且有时需要同时实现2个读取端口，使用Register能实现高速并行读写。  </p>
+<blockquote>
+<p>在上述提示的模块之外，你是否在实际实现时设计了其他的模块？如果是的话，请给出介绍和设计的思路。  </p>
+</blockquote>
+<p>我并没有设计其他的模块，所要求的功能都在提示的模块中完成。  </p>
+<blockquote>
+<p>事实上，实现 nop 空指令，我们并不需要将它加入控制信号真值表，为什么？  </p>
+</blockquote>
+<p>当读取到nop指令时，我们并不会进行任何实际的操作，即不会使用IFU之外的模块，也就不会使用相应的选择信号。这意味着即使控制信号悬空，也不会影响我们CPU的运行。  </p>
+<blockquote>
+<p>阅读 Pre 的 “MIPS 指令集及汇编语言” 一节中给出的测试样例，评价其强度（可从各个指令的覆盖情况，单一指令各种行为的覆盖情况等方面分析），并指出具体的不足之处。  </p>
+</blockquote>
+<p>该测试样例具有一定的强度：<br>覆盖到了add,ori,lw,sw,beq,lui指令；<br>在测试add指令时分别测试了正正、负负、正负相加的情况；<br>在测试ori指令时分别测试了立即数符号位为0和1的情况；<br>在测试beq指令时分别测试了跳转和不跳转的情况。  </p>
+<p>但是该测试样例也有不足：<br>首先，对于我们课下要求搭建的CPU来说，该样例并没有测试nop和sub指令。<br>其次，在测试lw和sw指令时，并没有测试偏移量为负数的情况。<br>另外，样例并没有测试某些特殊功能，例如，尝试修改0寄存器的值来确认其是否被设置为不可修改的。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://AddCloud330.github.io">AddCloud</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://addcloud330.github.io/2026/07/11/CO-P3/">https://addcloud330.github.io/2026/07/11/CO-P3/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://AddCloud330.github.io" target="_blank">Echoes of the Cloud</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/CO/">CO</a></div><div class="post-share"><div class="social-share" data-image="/img/avatar.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/07/11/CO-P7/" title="P7-异常中断和外设"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">P7-异常中断和外设</div></div><div class="info-2"><div class="info-item-1">新增模块 CP0CP0协处理器内置寄存器：各寄存器位域如下：CP0模块的端口定义： 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475`define SR_IM SR[15:10]`define SR_EXL SR[1]`define SR_IE SR[0]`define Cause_BD Cause[31]`define Cause_IP Cause[15:10]`define Cause_ExcCode Cause[6:2]parameter sr = 5&#x27;h0c;parameter cause = 5&#x27;h0d;parameter epc = 5&#x27;h0e;module CP0(    input wire clk,    input wire reset,    input wire en,    input wire...</div></div></div></a><a class="pagination-related" href="/2026/07/11/CO-P4/" title="P4-Verilog单周期CPU"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">P4-Verilog单周期CPU</div></div><div class="info-2"><div class="info-item-1">设计草稿 模块规格1.IFU（取指令单元）（1）模块接口    信号名 方向 描述    clk I 时钟信号   reset I 异步复位信号   zero I beq指令的选择信号（1代表跳转）   nPC_sel[2:0] I nPC的选择信号000:非跳转指令001:beq指令010:jal指令011:jr指令   target[25:0] I jal指令的目标[27:2]   ext_imm[31:0] I beq指令的偏移量   jrReg[31:0] I jr指令的目标寄存器中的值   PC[31:0] O 输出程序计数器的当前值   Instr[31:0] O 输出下一条指令的32位二进制码   PCplus4[31:0] O 下一条指令的地址   （2）功能定义    序号 功能名称 条件 操作    1 复位 reset信号有效 PC数值回到初始值（0x00003000）   2 取下一条指令 nPC_sel&#x3D;00或nPC_sel&#x3D;01&amp;&amp;zero&#x3D;0 PC&#x3D;PC+4，Instr顺序取得下一条指令   3...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/07/11/CO-P7/" title="P7-异常中断和外设"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">P7-异常中断和外设</div></div><div class="info-2"><div class="info-item-1">新增模块 CP0CP0协处理器内置寄存器：各寄存器位域如下：CP0模块的端口定义： 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475`define SR_IM SR[15:10]`define SR_EXL SR[1]`define SR_IE SR[0]`define Cause_BD Cause[31]`define Cause_IP Cause[15:10]`define Cause_ExcCode Cause[6:2]parameter sr = 5&#x27;h0c;parameter cause = 5&#x27;h0d;parameter epc = 5&#x27;h0e;module CP0(    input wire clk,    input wire reset,    input wire en,    input wire...</div></div></div></a><a class="pagination-related" href="/2026/07/11/CO-P4/" title="P4-Verilog单周期CPU"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">P4-Verilog单周期CPU</div></div><div class="info-2"><div class="info-item-1">设计草稿 模块规格1.IFU（取指令单元）（1）模块接口    信号名 方向 描述    clk I 时钟信号   reset I 异步复位信号   zero I beq指令的选择信号（1代表跳转）   nPC_sel[2:0] I nPC的选择信号000:非跳转指令001:beq指令010:jal指令011:jr指令   target[25:0] I jal指令的目标[27:2]   ext_imm[31:0] I beq指令的偏移量   jrReg[31:0] I jr指令的目标寄存器中的值   PC[31:0] O 输出程序计数器的当前值   Instr[31:0] O 输出下一条指令的32位二进制码   PCplus4[31:0] O 下一条指令的地址   （2）功能定义    序号 功能名称 条件 操作    1 复位 reset信号有效 PC数值回到初始值（0x00003000）   2 取下一条指令 nPC_sel&#x3D;00或nPC_sel&#x3D;01&amp;&amp;zero&#x3D;0 PC&#x3D;PC+4，Instr顺序取得下一条指令   3...</div></div></div></a><a class="pagination-related" href="/2026/07/11/CO-P5/" title="P5-Verilog五级流水线CPU"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">P5-Verilog五级流水线CPU</div></div><div class="info-2"><div class="info-item-1">一、设计草稿1.模块与划分将单周期CPU改造为五级流水线CPU，采用分布式译码，划分为F,D,E,M,W五级，各级设立单独的Controller，并在各级间添加流水线寄存器。 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475module Controller(    input wire [5:0] op,    input wire [5:0] funct,    output wire [1:0] RegDst,    output wire ALUSrc,    output wire [1:0] Mem2Reg,    output wire RegWrite,    output wire MemWrite,    output wire [2:0] nPC_sel,    output wire [2:0] ALUOp,    outpu...</div></div></div></a><a class="pagination-related" href="/2026/07/11/CO-P6/" title="P6-新增功能"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">P6-新增功能</div></div><div class="info-2"><div class="info-item-1">新增模块1. 乘除模块   信号名 方向 描述    clk I 时钟信号   reset I 复位信号   A[31:0] I 第一个运算数   B[31:0] I 第二个运算数   type I 指令类型   C[31:0] O 输出结果   start O 乘除运算开始的标志   busy O 乘除运算正在进行的标志   1234567891011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374module MDU(    input wire clk,    input wire reset,    input wire [31:0] A,    input wire [31:0] B,    input wire [4:0] type,    output wire [31:0] C,    output wire start,    output wire busy ...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">AddCloud</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">17</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">3</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">1</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AE%BE%E8%AE%A1%E8%8D%89%E7%A8%BF"><span class="toc-number">1.</span> <span class="toc-text">设计草稿</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A8%A1%E5%9D%97%E8%A7%84%E6%A0%BC"><span class="toc-number">1.1.</span> <span class="toc-text">模块规格</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-IFU%EF%BC%88%E5%8F%96%E6%8C%87%E4%BB%A4%E5%8D%95%E5%85%83%EF%BC%89"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.IFU（取指令单元）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-ALU%EF%BC%88%E8%AE%A1%E7%AE%97%E5%8D%95%E5%85%83%EF%BC%89"><span class="toc-number">1.1.2.</span> <span class="toc-text">2.ALU（计算单元）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-Ext%EF%BC%88%E6%89%A9%E5%B1%95%E5%8D%95%E5%85%83%EF%BC%89"><span class="toc-number">1.1.3.</span> <span class="toc-text">3.Ext（扩展单元）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-GRF%EF%BC%88%E5%AF%84%E5%AD%98%E5%99%A8%E5%A0%86%EF%BC%89"><span class="toc-number">1.1.4.</span> <span class="toc-text">4.GRF（寄存器堆）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-Controller%EF%BC%88%E6%8C%87%E4%BB%A4%E8%A7%A3%E6%9E%90%E5%8D%95%E5%85%83%EF%BC%89"><span class="toc-number">1.1.5.</span> <span class="toc-text">5.Controller（指令解析单元）</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B5%8B%E8%AF%95%E6%96%B9%E6%A1%88"><span class="toc-number">2.</span> <span class="toc-text">测试方案</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E7%BC%96%E5%86%99MIPS%E4%BB%A3%E7%A0%81"><span class="toc-number">2.1.</span> <span class="toc-text">1.编写MIPS代码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%AF%BC%E5%87%BA%E6%9C%BA%E5%99%A8%E7%A0%81"><span class="toc-number">2.2.</span> <span class="toc-text">2.导出机器码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E8%BF%90%E8%A1%8CCPU"><span class="toc-number">2.3.</span> <span class="toc-text">3.运行CPU</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%9D%E8%80%83%E9%A2%98%E8%A7%A3%E7%AD%94"><span class="toc-number">3.</span> <span class="toc-text">思考题解答</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P4/" title="P4-Verilog单周期CPU">P4-Verilog单周期CPU</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P3/" title="P3-Logisim单周期CPU">P3-Logisim单周期CPU</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P7/" title="P7-异常中断和外设">P7-异常中断和外设</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P6/" title="P6-新增功能">P6-新增功能</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/OO-U1/" title="OO-U1总结">OO-U1总结</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By AddCloud</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"></div><style>
+/* ===== 整体背景 ===== */
+body {
+  background: #FDF5F5 !important;
+  background-image: url('https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/bg.png') !important;
+  background-size: cover !important;
+  background-attachment: fixed !important;
+  background-position: center center !important;
+  background-repeat: no-repeat center;
+}
+/* ===== 针对手机竖屏，重新定位左侧人物 ===== */
+@media screen and (max-width: 768px) {
+  body {
+    /* 调整这个百分比，直到人物脸部完全显示 */
+    background-position: 20% 50% !important;
+  }
+}
+/* ===== 毛玻璃卡片效果 ===== */
+#recent-posts > .recent-post-item,
+.layout > .recent-posts > .recent-post-item,
+.layout > div:not(.recent-posts) {
+  background: rgba(255, 248, 248, 0.55) !important;
+  backdrop-filter: blur(12px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(1.4) !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 8px 32px rgba(200, 160, 180, 0.18) !important;
+  transition: all 0.4s ease !important;
+}
+#recent-posts > .recent-post-item:hover,
+.layout > div:not(.recent-posts):hover {
+  background: rgba(255, 248, 248, 0.70) !important;
+  box-shadow: 0 12px 48px rgba(200, 160, 180, 0.28) !important;
+  transform: translateY(-2px) !important;
+}
+/* ===== 标题文字风格 ===== */
+#site-title {
+  font-family: 'Georgia', 'Noto Serif SC', serif !important;
+  font-weight: 300 !important;
+  letter-spacing: 6px !important;
+  color: #F5E0E0 !important;
+  text-shadow: 0 2px 20px rgba(200, 150, 160, 0.5) !important;
+}
+#site-subtitle {
+  font-family: 'Georgia', 'Noto Serif SC', serif !important;
+  font-weight: 200 !important;
+  letter-spacing: 8px !important;
+  color: rgba(255, 240, 240, 0.85) !important;
+  text-shadow: 0 2px 16px rgba(180, 140, 150, 0.4) !important;
+}
+/* ===== 文章标题 ===== */
+.post-title {
+  font-family: 'Georgia', 'Noto Serif SC', serif !important;
+  font-weight: 400 !important;
+  letter-spacing: 2px !important;
+}
+.post-meta {
+  color: #C8A8B0 !important;
+  font-size: 14px !important;
+}
+/* ===== 链接颜色 ===== */
+a {
+  color: #D4A0A8 !important;
+  transition: color 0.3s ease !important;
+}
+a:hover {
+  color: #E8B0B8 !important;
+}
+/* ===== 侧边栏头像 ===== */
+.avatar-img {
+  border: 3px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 4px 24px rgba(200, 160, 180, 0.3) !important;
+}
+/* ===== 滚动条（浅粉） ===== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 245, 245, 0.6);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #F5C4C4;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E8B0B0;
+}
+/* ===== 选中文字颜色 ===== */
+::selection {
+  background: #F5C4C4 !important;
+  color: #FFFFFF !important;
+}
+/* ===== 顶部导航栏透明毛玻璃 ===== */
+#nav {
+  background: rgba(255, 248, 248, 0.35) !important;
+  backdrop-filter: blur(16px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.4) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 2px 24px rgba(200, 160, 180, 0.08) !important;
+}
+#nav .site-page {
+  color: #F5E8E8 !important;
+  text-shadow: 0 1px 8px rgba(180, 140, 150, 0.3) !important;
+}
+#nav .site-page:hover {
+  color: #FFFFFF !important;
+}
+/* ===== 页脚 ===== */
+#footer {
+  background: rgba(255, 248, 248, 0.30) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #E8D0D0 !important;
+  text-shadow: 0 1px 8px rgba(180, 140, 150, 0.2) !important;
+}
+#footer a {
+  color: #E8C8C8 !important;
+}
+#footer a:hover {
+  color: #F5E0E0 !important;
+}
+/* ===== 代码块圆角柔和 ===== */
+.highlight {
+  border-radius: 16px !important;
+  box-shadow: 0 4px 20px rgba(200, 160, 180, 0.10) !important;
+}
+/* ===== 首页标题区域透明 ===== */
+#page-header, 
+#page-header:before,
+.page-header,
+.not-home-page #page-header,
+.post #page-header {
+  background-image: none !important;          /* 关键：去掉图片 */
+  background: transparent !important;         /* 清除所有背景 */
+  background-color: transparent !important;   /* 确保颜色透明 */
+}
+/* ===== 右侧边栏 "Follow Me" 按钮 ===== */
+.author-info__sayhi .btn,
+#aside-content .card_author .btn {
+  background: rgba(245, 196, 196, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  color: #FFFFFF !important;
+  border-radius: 30px !important;
+  backdrop-filter: blur(4px) !important;
+  box-shadow: 0 2px 12px rgba(200, 160, 180, 0.2) !important;
+  transition: all 0.4s ease !important;
+}
+.author-info__sayhi .btn:hover,
+#aside-content .card_author .btn:hover {
+  background: rgba(245, 196, 196, 0.95) !important;
+  transform: scale(1.04) !important;
+  box-shadow: 0 4px 20px rgba(200, 160, 180, 0.4) !important;
+}
+/* ===== 按钮风格 ===== */
+.btn-beautify {
+  background: rgba(245, 196, 196, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 30px !important;
+  backdrop-filter: blur(4px) !important;
+  color: #FFFFFF !important;
+}
+.btn-beautify:hover {
+  background: rgba(245, 196, 196, 0.85) !important;
+  transform: scale(1.02) !important;
+}
+</style>
+<script>
+(function() {
+  const count = 25;                    // 花瓣数量（减少）
+  const container = document.body;
+  const petalImg = '/img/petal.png';   // 你的单瓣图片路径
+
+  // 注入动画关键帧
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes petalFall {
+      0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.9; }
+      100% { transform: translateY(${window.innerHeight + 120}px) rotate(720deg) scale(0.5); opacity: 0.1; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  function createPetal(index) {
+    const petal = document.createElement('img');
+    // 均匀分布：把 0~100% 分成 count 份，每份的中心点，加上随机偏移 ±4%
+    const baseLeft = (index / count) * 100;
+    const randomOffset = (Math.random() - 0.5) * 8; // -4% ~ +4%
+    const left = Math.min(100, Math.max(0, baseLeft + randomOffset)); // 限制范围
+
+    const size = 22 + Math.random() * 18;     // 22~40px（保持适中）
+    const duration = 12 + Math.random() * 14; // 12~26 秒（更慢）
+    const delay = Math.random() * 10;         // 0~10 秒延迟（更分散）
+    const rotation = Math.random() * 360;
+
+    petal.src = petalImg;
+    petal.style.cssText = `
+      position: fixed;
+      top: -30px;
+      left: ${left}%;
+      width: ${size}px;
+      height: auto;
+      pointer-events: none;
+      z-index: 99999;
+      transform: rotate(${rotation}deg);
+      animation: petalFall ${duration}s linear ${delay}s infinite;
+      opacity: 0.85;
+    `;
+    container.appendChild(petal);
+  }
+
+  // 生成花瓣（按顺序生成，位置均匀分布）
+  for (let i = 0; i < count; i++) {
+    createPetal(i);
+  }
+
+  // 窗口大小变化时更新动画终点
+  window.addEventListener('resize', function() {
+    const existingStyle = document.querySelector('style[data-petal]');
+    if (existingStyle) {
+      existingStyle.textContent = `
+        @keyframes petalFall {
+          0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.9; }
+          100% { transform: translateY(${window.innerHeight + 120}px) rotate(720deg) scale(0.5); opacity: 0.1; }
+        }
+      `;
+    }
+  });
+})();
+</script>
+<script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

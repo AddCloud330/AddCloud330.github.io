@@ -1,0 +1,460 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>OS-线程模型挑战性任务实验报告 | Echoes of the Cloud</title><meta name="author" content="AddCloud"><meta name="copyright" content="AddCloud"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="ffffff"><meta name="description" content="修改内容1. 数据结构与状态扩展将 struct Env 扩充为线程控制块：新增 env_tgid 标记线程组，env_exit_status 保存退出返回值，env_waiter 记录等待者，env_futex_pa 记录 futex 阻塞地址。同时加入 ENV_ZOMBIE 状态，使线程退出后控制块暂不释放，供父线程获取返回值后再回收。 2. 线程创建与初始化内核支持实现 thread_all">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OS-线程模型挑战性任务实验报告">
+<meta property="og:url" content="https://addcloud330.github.io/2026/07/11/OS-challenge/index.html">
+<meta property="og:site_name" content="Echoes of the Cloud">
+<meta property="og:description" content="修改内容1. 数据结构与状态扩展将 struct Env 扩充为线程控制块：新增 env_tgid 标记线程组，env_exit_status 保存退出返回值，env_waiter 记录等待者，env_futex_pa 记录 futex 阻塞地址。同时加入 ENV_ZOMBIE 状态，使线程退出后控制块暂不释放，供父线程获取返回值后再回收。 2. 线程创建与初始化内核支持实现 thread_all">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://addcloud330.github.io/img/avatar.png">
+<meta property="article:published_time" content="2026-07-11T10:10:51.000Z">
+<meta property="article:modified_time" content="2026-07-11T12:37:57.043Z">
+<meta property="article:author" content="AddCloud">
+<meta property="article:tag" content="OS">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://addcloud330.github.io/img/avatar.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "OS-线程模型挑战性任务实验报告",
+  "url": "https://addcloud330.github.io/2026/07/11/OS-challenge/",
+  "image": "https://addcloud330.github.io/img/avatar.png",
+  "datePublished": "2026-07-11T10:10:51.000Z",
+  "dateModified": "2026-07-11T12:37:57.043Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "AddCloud",
+      "url": "https://AddCloud330.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://addcloud330.github.io/2026/07/11/OS-challenge/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'OS-线程模型挑战性任务实验报告',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@200;300;400;600&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Echoes of the Cloud</span></a><a class="nav-page-title" href="/"><span class="site-name">OS-线程模型挑战性任务实验报告</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">OS-线程模型挑战性任务实验报告</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-07-11T12:37:57.043Z" title="更新于 2026-07-11 20:37:57">2026-07-11</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%AF%BE%E7%A8%8B/">课程</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h2 id="修改内容"><a href="#修改内容" class="headerlink" title="修改内容"></a>修改内容</h2><h3 id="1-数据结构与状态扩展"><a href="#1-数据结构与状态扩展" class="headerlink" title="1. 数据结构与状态扩展"></a>1. 数据结构与状态扩展</h3><p>将 <code>struct Env</code> 扩充为线程控制块：新增 <code>env_tgid</code> 标记线程组，<code>env_exit_status</code> 保存退出返回值，<code>env_waiter</code> 记录等待者，<code>env_futex_pa</code> 记录 futex 阻塞地址。同时加入 <code>ENV_ZOMBIE</code> 状态，使线程退出后控制块暂不释放，供父线程获取返回值后再回收。</p>
+<h3 id="2-线程创建与初始化"><a href="#2-线程创建与初始化" class="headerlink" title="2. 线程创建与初始化"></a>2. 线程创建与初始化</h3><h4 id="内核支持"><a href="#内核支持" class="headerlink" title="内核支持"></a>内核支持</h4><p>实现 <code>thread_alloc</code> 辅助函数，专门为线程分配 <code>Env</code>。与进程创建不同，它直接复用父线程的页目录和 ASID，达到地址空间共享，同时继承父线程的 <code>tgid</code>、优先级和 TLB Mod 入口。新线程的 <code>Trapframe</code> 副本会被后续覆盖为入口地址和栈指针，而 <code>env_parent_id</code> 被设置为创建者 ID。</p>
+<h4 id="系统调用-sys-create-thread"><a href="#系统调用-sys-create-thread" class="headerlink" title="系统调用 sys_create_thread"></a>系统调用 <code>sys_create_thread</code></h4><p>校验入口和栈的合法性与对齐后，调用 <code>thread_alloc</code>，将 <code>entry_point</code> 赋给 <code>cp0_epc</code>，栈顶赋给 <code>regs[29]</code>，参数放入 <code>regs[4]</code>，最后将线程置为 <code>ENV_RUNNABLE</code> 并加入调度队列。</p>
+<h4 id="用户库封装"><a href="#用户库封装" class="headerlink" title="用户库封装"></a>用户库封装</h4><p>在 <code>mthread_create</code> 中，采用静态槽位管理 1024 个 4KB 栈区，分配空闲栈后，在栈顶下方构建 <code>struct thread_args</code> 并预留 32 字节参数槽。入口包装为 <code>thread_wrapper</code>，使得 <code>start_routine</code> 返回后自动调用 <code>mthread_exit</code>。</p>
+<h3 id="3-线程退出与等待"><a href="#3-线程退出与等待" class="headerlink" title="3. 线程退出与等待"></a>3. 线程退出与等待</h3><h4 id="退出系统调用-sys-exit"><a href="#退出系统调用-sys-exit" class="headerlink" title="退出系统调用 sys_exit"></a>退出系统调用 <code>sys_exit</code></h4><p>将当前线程状态置为 <code>ENV_ZOMBIE</code>，保存返回值到 <code>env_exit_status</code>，移出调度队列，并扫描所有 <code>Env</code>，唤醒 <code>env_waiter</code> 指向本线程的等待者。随后调用 <code>schedule(1)</code> 放弃 CPU，不返回。</p>
+<h4 id="等待系统调用-sys-wait"><a href="#等待系统调用-sys-wait" class="headerlink" title="等待系统调用 sys_wait"></a>等待系统调用 <code>sys_wait</code></h4><p>首先校验返回值存储地址的可写性。若目标已是 <code>ZOMBIE</code>，则读取返回值并调用 <code>env_free</code> 回收控制块；否则阻塞当前线程，将其状态设为 <code>ENV_NOT_RUNNABLE</code>，记录 <code>env_waiter</code>，并在调用 <code>schedule</code> 前将内核栈上的最新 <code>Trapframe</code> 写回 <code>curenv-&gt;env_tf</code>，同时回退 <code>cp0_epc</code> 4 字节并设置 <code>regs[2]=0</code>。这一步保证了唤醒后系统调用能重新执行且正确返回 0 。</p>
+<h3 id="4-共享资源管理与释放"><a href="#4-共享资源管理与释放" class="headerlink" title="4. 共享资源管理与释放"></a>4. 共享资源管理与释放</h3><p>原有 <code>env_free</code> 会无条件释放页目录和 ASID，但现在多线程共享地址空间，所以我们修改 <code>env_free</code>：遍历所有 <code>Env</code>，若同组（<code>tgid</code> 相同）仍有其他存活线程，则仅回收当前控制块而不销毁共享资源；只有当同组无其他线程时才执行完整回收，释放用户页、页表、页目录和 ASID。</p>
+<h3 id="5-Futex-系统调用"><a href="#5-Futex-系统调用" class="headerlink" title="5. Futex 系统调用"></a>5. Futex 系统调用</h3><p>在 <code>kern/mfutex.c</code> 中实现 <code>sys_mfutex</code>，核心是地址转换与等待队列管理：</p>
+<ul>
+<li>校验 <code>uaddr</code> 对齐、范围及映射有效性，通过 <code>page_lookup</code> 获取物理页，结合页内偏移得到物理地址。</li>
+<li><code>MFUTEX_WAIT</code>：读取物理地址值，若与 <code>val</code> 不等返回 <code>-E_AGAIN</code>；否则阻塞当前线程，记录 <code>env_futex_pa</code>，同样在 <code>schedule</code> 前保存上下文并设置返回值为 0。</li>
+<li><code>MFUTEX_WAKE</code>：遍历所有 <code>Env</code>，唤醒匹配物理地址且状态为 <code>ENV_NOT_RUNNABLE</code> 的线程，最多唤醒 <code>val</code> 个。</li>
+</ul>
+<p>由于测试约束同时等待线程 ≤ 16，采用线性扫描足够，未引入复杂哈希表。</p>
+<h3 id="6-用户态互斥锁"><a href="#6-用户态互斥锁" class="headerlink" title="6. 用户态互斥锁"></a>6. 用户态互斥锁</h3><p>利用 GCC 原子内置函数和 <code>syscall_mfutex</code> 实现三态锁：</p>
+<ul>
+<li><code>mthread_mutex_trylock</code>：CAS 0→1 尝试加锁。</li>
+<li><code>mthread_mutex_lock</code>：先快速路径，失败则原子交换为 2 并判断旧值；若旧值为 0 则获得锁，否则调用 <code>MFUTEX_WAIT</code>（期望值 2）阻塞，唤醒后重试。</li>
+<li><code>mthread_mutex_unlock</code>：原子设为 0，若旧值为 2 则调用 <code>MFUTEX_WAKE</code> 唤醒等待者。</li>
+</ul>
+<p>三态设计有效避免了唤醒丢失。</p>
+<h3 id="7-关键问题解决"><a href="#7-关键问题解决" class="headerlink" title="7. 关键问题解决"></a>7. 关键问题解决</h3><ul>
+<li>在用户库 <code>mthread_create</code> 中预留参数槽，修正了跳转错误，实现栈帧对齐。</li>
+<li>阻塞系统调用中强制同步 <code>Trapframe</code> 并回退 PC，避免返回值异常和死锁。</li>
+<li>修改 <code>env_free</code>，按组共享保护，避免误删共享页目录。</li>
+<li>补上 <code>env_user_tlb_mod_entry</code> 的拷贝，满足了评测要求。</li>
+</ul>
+<p>经过上述调整，本地通过样例，提交通过评测。这个任务将 MOS 单进程体系扩展为支持多线程、线程同步和用户级线程库的混合内核系统，完成这个任务的过程让我加深了对进程模型、调度、内存管理和底层调用的理解。</p>
+<h2 id="Thinking"><a href="#Thinking" class="headerlink" title="Thinking"></a>Thinking</h2><h3 id="Thinking-1"><a href="#Thinking-1" class="headerlink" title="Thinking 1"></a>Thinking 1</h3><blockquote>
+<p>在为 MOS 扩展线程机制后，为什么不需要为线程单独实现一套调度器？</p>
+</blockquote>
+<p>MOS 原有的调度器基于 <code>struct Env</code> 链表和 <code>env_status</code> 状态进行轮转，它只关心下一个可运行的任务是谁，并调用 <code>env_run</code> 切换 CPU 上下文。我们将线程也抽象为 <code>Env</code> 实例，它们与进程的唯一区别在于是否共享父进程的页目录和地址空间。调度器在切换时保存和恢复寄存器上下文，这一过程与地址空间是否共享无关。因此，直接复用 <code>sched.c</code> 中的调度逻辑即可，无需为线程重写调度器。</p>
+<h3 id="Thinking-2"><a href="#Thinking-2" class="headerlink" title="Thinking 2"></a>Thinking 2</h3><blockquote>
+<p>同一线程组内的多个线程应共享哪些资源？又必须各自独立保存哪些状态？请分别分析 <code>env_pgdir</code>、<code>env_tf</code> 和用户栈在其中的作用。</p>
+</blockquote>
+<p>同一线程组内的线程共享整个地址空间，因此必须共享 <code>env_pgdir</code>，这样它们才能看到相同的全局变量、堆、代码段和文件描述符。此外，内核中的 <code>env_asid</code> 也应当共享，否则 TLB 刷新会出错。</p>
+<p>每个线程必须拥有独立的栈和寄存器。寄存器集合即 <code>env_tf</code>，其中包含 PC 、栈指针 SP 和通用寄存器。同时，每个线程需要独立的用户栈，因为它们各自进行函数调用，局部变量和调用栈不能交叉。</p>
+<p><code>env_pgdir</code>决定虚拟地址到物理地址的映射，利用它实现共享内存。<br><code>env_tf</code>保存线程被切换出去时的寄存器现场，恢复时通过 <code>env_pop_tf</code> 还原，实现并发执行。<br>用户栈虽然位于共享地址空间内，但每个线程的栈区间必须隔离，本任务划分 4MB 区域为 1024 个 4KB 槽位，防止栈溢出相互覆盖。</p>
+<h3 id="Thinking-3"><a href="#Thinking-3" class="headerlink" title="Thinking 3"></a>Thinking 3</h3><blockquote>
+<p>线程调用 <code>sys_exit</code> 后，为什么应进入 <code>ENV_ZOMBIE</code> 状态，而不是直接释放控制块？</p>
+</blockquote>
+<p>线程退出后，其返回值需要被其他线程通过 <code>sys_wait</code> &#x2F; <code>mthread_join</code> 获取。如果直接释放 <code>Env</code> 控制块，那么 <code>exit_value</code> 字段将丢失，等待者无法读取返回值。<code>ENV_ZOMBIE</code> 状态表示该线程已经终止，但控制块和返回值被保留，直到有等待者调用 <code>sys_wait</code> 回收它，此时才调用 <code>env_free</code> 彻底释放。</p>
+<h3 id="Thinking-4"><a href="#Thinking-4" class="headerlink" title="Thinking 4"></a>Thinking 4</h3><blockquote>
+<p>用户态 mutex 使用三个状态：0（未加锁）、1（已加锁无等待者）、2（已加锁可能有等待者）。如果去掉状态 2，只用 0&#x2F;1 两态，结合 <code>mfutex</code> 系统调用，能够正确实现互斥锁吗？使用三个状态的理由是什么？</p>
+</blockquote>
+<p>不能。只用 0&#x2F;1 两态会导致唤醒丢失，引发死锁。假设加锁慢路径中，线程 B 竞争失败后调用 <code>FUTEX_WAIT</code>，期望值为 0，等待锁变为空闲；解锁时线程 A 将 <code>state</code> 置为 0 并调用 <code>FUTEX_WAKE</code>。若 A 的解锁和唤醒发生在 B 进入内核等待队列之前，则唤醒信号丢失，随后 B 进入内核发现 <code>state</code> 等于期望值 0，于是将自身阻塞。此时锁已是空闲状态，但 B 却因满足等待锁变为空闲的条件而陷入休眠，且不再有线程唤醒它，造成死锁。</p>
+<p>三态设计引入状态 2 来标记可能有等待者。加锁慢路径中，线程先将 <code>state</code> 原子交换为 2，再以期望值 2 调用 <code>FUTEX_WAIT</code>，即等待锁状态不再是 2。解锁时，原子地将 <code>state</code> 置为 0，并检查旧值。若旧值为 1，说明无等待者，无需唤醒；若旧值为 2，说明可能有等待者，调用 <code>FUTEX_WAKE</code> 唤醒。</p>
+<p>若解锁和 <code>WAKE</code> 先于 B 的 <code>WAIT</code> 发生，B 进入内核时看到 <code>state</code> 已变为 0，与期望值 2 不等，<code>WAIT</code> 立即返回 <code>-E_AGAIN</code>，B 不会阻塞而是重试加锁，从而正确夺回锁。因此，引入状态 2 能避免唤醒信号丢失。</p>
+<h3 id="Thinking-5"><a href="#Thinking-5" class="headerlink" title="Thinking 5"></a>Thinking 5</h3><blockquote>
+<p>在 <code>sys_wait</code> 中，当目标线程尚未退出，因而调用者需要阻塞等待时，如何实现切换到下一个线程的？题目要求此时 <code>sys_wait</code> 系统调用对于调用者返回 0，结合 <code>schedule -&gt; env_run -&gt; env_pop_tf</code> 的调用路径说明如何正确设置该返回值。</p>
+</blockquote>
+<p>当 <code>sys_wait</code> 发现目标线程不是 <code>ENV_ZOMBIE</code> 时，当前线程需要阻塞。此时内核会将当前线程的 <code>env_status</code> 设置为 <code>ENV_NOT_RUNNABLE</code>，并记录等待关系，将当前线程挂在目标线程的等待者指针上。再调用 <code>sched_yield()</code> 或 <code>schedule(1)</code> 让出 CPU，选择下一个可运行线程执行。</p>
+<p>在调用 <code>schedule</code> 之前，必须将当前内核栈上的最新 Trapframe 保存回 <code>curenv-&gt;env_tf</code>，因为后续 <code>env_run</code> 会从 <code>curenv-&gt;env_tf</code> 恢复上下文。当目标线程退出时，它会在 <code>sys_exit</code> 中检查是否有等待者，若有，则将等待者状态设为 <code>ENV_RUNNABLE</code>，并修改等待者的 <code>env_tf.regs[2]</code>（即 <code>v0</code> 寄存器）为 0，表示系统调用成功返回。然后，调度器重新调度到该等待者时，<code>env_pop_tf</code> 会恢复 <code>v0=0</code>，从而使用户态看到 <code>sys_wait</code> 返回 0。</p>
+<h3 id="Thinking-6"><a href="#Thinking-6" class="headerlink" title="Thinking 6"></a>Thinking 6</h3><blockquote>
+<p><code>sys_mfutex</code> 系统调用参数为 <code>MFUTEX_WAIT</code> 时，语义是原子读取 <code>uaddr</code> 数据和入参 <code>val</code>，若相等则阻塞，否则返回 <code>-E_AGAIN</code>。如果把原子的“读 + 比对”拆分成两步非原子操作，结合调用方的业务逻辑，分析会出现什么并发问题？</p>
+</blockquote>
+<p>非原子拆分会导致丢失唤醒问题。线程 A 检查 <code>uaddr</code> 的值，发现等于 <code>val</code>，于是决定阻塞。但在 A 进入内核等待队列之前，线程 B 修改了 <code>uaddr</code> 的值并调用了 <code>MFUTEX_WAKE</code>，此时等待队列为空，无线程被唤醒。随后 A 才将自己加入等待队列并陷入休眠，由于 <code>WAKE</code> 已经过去，A 将永远无法被唤醒。</p>
+<p>原子的“读 + 比对”操作确保如果值在内核介入期间被改变，<code>WAIT</code> 会立即返回 <code>-E_AGAIN</code>，调用者会重新尝试获取锁，而不会盲目阻塞。</p>
+<h3 id="Thinking-7"><a href="#Thinking-7" class="headerlink" title="Thinking 7"></a>Thinking 7</h3><blockquote>
+<p>某 futex 等待队列中有 3 个阻塞线程，调用 <code>MFUTEX_WAKE</code> 时传入 <code>val=10</code>，内核会如何处理？该系统调用为什么不严格限制唤醒固定数量的线程？</p>
+</blockquote>
+<p>内核会遍历等待队列，匹配同一物理地址的线程，依次唤醒最多 <code>min(val, 队列长度)</code> 个线程，即唤醒 3 个。</p>
+<p>不严格限制唤醒固定数量的线程，因为调用者通常不知道当前有多少线程在等待，传入一个大数是为了尽可能多地唤醒。如果严格限制固定数量，当队列不足时，<code>WAKE</code> 可能返回错误或阻塞，这会增加复杂性且不符合实际需求。</p>
+<h3 id="Thinking-8"><a href="#Thinking-8" class="headerlink" title="Thinking 8"></a>Thinking 8</h3><blockquote>
+<p>若使用单调递增的计数器分配栈空间，当创建并销毁大量线程后，计数器会超过 1024 导致越界。简述如何实现栈空间回收再利用。</p>
+</blockquote>
+<p>采用空闲栈槽位管理，例如使用一个位图或空闲链表。每个槽位对应 4KB 的栈区间，共 1024 个。在 <code>mthread_create</code> 中扫描位图找到第一个空闲位，将其置 1，计算对应的栈顶地址 <code>USTACKTOP - (slot+1) * PTMAP</code>。当线程退出并被 <code>mthread_join</code> 回收后，调用用户态函数将对应槽位的位清零，释放栈。这样，只要同时存在的线程数不超过 1024，栈地址始终落在合法的 4MB 范围内，避免了越界问题。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://AddCloud330.github.io">AddCloud</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://addcloud330.github.io/2026/07/11/OS-challenge/">https://addcloud330.github.io/2026/07/11/OS-challenge/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://AddCloud330.github.io" target="_blank">Echoes of the Cloud</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/OS/">OS</a></div><div class="post-share"><div class="social-share" data-image="/img/avatar.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/07/11/OS-lab0/" title="OS-lab0实验报告"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">OS-lab0实验报告</div></div><div class="info-2"><div class="info-item-1">ThinkingThinking 0.1  新建时，处于为未跟踪状态（untracked） 添加内容并用add命令之后，文件处于暂存状态（staged） 在修改之后，处于被修改状态（modified）  修改后和add前的status不同，前者是未跟踪状态，不在git管理范围内；后者已经被跟踪，修改之后处于被修改状态，只是修改还没有提交。 Thinking 0.2 add the file : git add stage the file : git add commit : git commit  Thinking 0.3 被错误删除： git restore print.c 被错误删除且git rm print.c： 先 git restore –staged print.c 再 git restore print.c 将hello.c移出暂存区： git restore –staged hello.c  Thinking 0.4 Thinking 0.5可以看出&gt;是覆盖，&gt;&gt;是追加。 Thinking 0.6用echo命令向test文件写入内容，comma...</div></div></div></a><a class="pagination-related" href="/2026/07/11/OO-U3/" title="OO-U3总结"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">OO-U3总结</div></div><div class="info-2"><div class="info-item-1">一、对 JML 和规格驱动开发的理解JML 是一种形式化的规格描述语言，它将“契约式设计”落到 Java 代码上。通过 requires、ensures、assignable、signals 等关键字，我们能精确地定义方法的前置条件（调用者的义务）、后置条件（实现者的承诺）、副作用（允许修改的范围）以及异常行为。 规格驱动开发的核心价值在于：  消除二义性。自然语言中的“通常”“尽量”等模糊词在 JML 中不复存在。 设计与实现分离。可以先写规格，再写实现，测试也基于规格，保证正确性。 支持自动化验证。结合 JUnit 和工具链，可以自动检查实现是否满足规格。  三次作业下来，我深刻体会到：好的规格非常有用，让调用者和实现者各司其职，一旦违反契约，要么是调用方输入不合法（抛异常），要么是实现方逻辑有误（测试失败）。这种“按契约编程”的思维方式，让代码的可靠性有了坚实的理论支撑。 二、JUnit 测试经验在实践“基于规格的自动化测试”的过程中，我积累了以下方法：  状态快照 + 副作用验证在 TestNetwork 中，我编写了 assertJMLBehavior() 方法：每次调...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/07/11/OS-lab4/" title="OS-lab4实验报告"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">OS-lab4实验报告</div></div><div class="info-2"><div class="info-item-1">ThinkingThinking 4.1思考并回答下面的问题：  内核在保存现场的时候是如何避免破坏通用寄存器的？  内核通过 SAVE_ALL 宏，将全部通用寄存器保存到内核栈上的 Trapframe 结构体中。该过程使用属于内核的独立栈空间，不会覆盖用户栈上或寄存器中正在使用的值，因此能完整保存用户态寄存器内容。  系统陷入内核调用后可以直接从当时的 $a0-$a3 参数寄存器中得到用户调用 msyscall 留下的信息吗？  不能。在内核入口处，这些参数寄存器已被使用或覆盖（例如在 SAVE_ALL 中暂存），因此不能直接读取。参数实际上是从保存好的 Trapframe 中取得的。  我们是怎么做到让 sys 开头的函数“认为”我们提供了和用户调用 msyscall 时同样的参数的？  do_syscall 从 Trapframe 的 tf-&gt;regs[5–7] 取出前三个参数，再从用户栈（tf-&gt;regs[29] 指向的栈帧 +16、+20 偏移）取出最后两个参数，以与用户完全一致的参数列表去调用内核服务函数。  内核处理系统调用的过程对 Trapframe ...</div></div></div></a><a class="pagination-related" href="/2026/07/11/OS-lab2/" title="OS-lab2实验报告"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">OS-lab2实验报告</div></div><div class="info-2"><div class="info-item-1">ThinkingThinking 2.1编写的 C 程序中指针变量中存储的地址以及 MIPS 汇编程序中 lw 和 sw 指令使用的地址都被视为虚拟地址。 Thinking 2.2 从可重用性的角度，阐述用宏来实现链表的好处：  类型无关：宏在预编译期进行文本替换，不绑定具体数据类型。它像模板一样，能让同一套逻辑处理任何结构体，避免了为不同数据类型重复编写代码。 侵入式设计的灵活性：通过在业务结构体中嵌入 ENTRY，使对象可以同时存在于多个数据结构中，无需修改数据结构源码。 零内存管理开销：宏只操作指针，不负责内存分配。开发者可以自由决定数据存储在栈、堆还是静态区。这种解耦让链表逻辑能适配各种内存管理环境。 逻辑隐藏与接口统一：将复杂的二级指针操作（如 le_prev 指向指针的指针）封装在简单的接口（如 LIST_REMOVE）下。开发者无需重复发明轮子，降低了因手写指针逻辑导致的 Bug。 执行效率高：宏在调用处展开，消除了函数调用的压栈和跳转开销，且利于编译器进行指令优化。   单向链表与循环链表与双向链表，在插入与删除操作上的性能差异：      操作类型 单向链表 双...</div></div></div></a><a class="pagination-related" href="/2026/07/11/OS-lab3/" title="OS-lab3实验报告"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">OS-lab3实验报告</div></div><div class="info-2"><div class="info-item-1">lab3实验报告ThinkingThinking 3.1这行代码实现了页目录自映射。 1e-&gt;env_pgdir[PDX(UVPT)] = PADDR(e-&gt;env_pgdir) | PTE_V;   e-&gt;env_pgdir 是当前进程的页目录基地址（内核虚拟地址）。   PDX(UVPT) 表示虚拟地址 UVPT 的页目录索引 PADDR(e-&gt;env_pgdir) 获取该页目录表所在的物理地址。   PTE_V 是“存在位”，表示该页表项有效。  整行代码表示将页目录表自身的物理地址，作为页表物理地址填入页目录的第 PDX(UVPT) 项。这样，当 CPU 翻译 UVPT 区域的虚拟地址时，页目录项指向页目录本身，用户态程序就能以只读方式直接读取 UVPT 地址来查看自己的页表内容，无需陷入内核。 Thinking 3.2data 参数来源于 load_icode 中的 e（当前进程的 struct Env *），通过 elf_load_seg 的最后一个参数传入，最终在回调时作为 load_icode_mapper 的第一个参数。 作用：load_...</div></div></div></a><a class="pagination-related" href="/2026/07/11/OS-lab0/" title="OS-lab0实验报告"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">OS-lab0实验报告</div></div><div class="info-2"><div class="info-item-1">ThinkingThinking 0.1  新建时，处于为未跟踪状态（untracked） 添加内容并用add命令之后，文件处于暂存状态（staged） 在修改之后，处于被修改状态（modified）  修改后和add前的status不同，前者是未跟踪状态，不在git管理范围内；后者已经被跟踪，修改之后处于被修改状态，只是修改还没有提交。 Thinking 0.2 add the file : git add stage the file : git add commit : git commit  Thinking 0.3 被错误删除： git restore print.c 被错误删除且git rm print.c： 先 git restore –staged print.c 再 git restore print.c 将hello.c移出暂存区： git restore –staged hello.c  Thinking 0.4 Thinking 0.5可以看出&gt;是覆盖，&gt;&gt;是追加。 Thinking 0.6用echo命令向test文件写入内容，comma...</div></div></div></a><a class="pagination-related" href="/2026/07/11/OS-lab1/" title="OS-lab1实验报告"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">OS-lab1实验报告</div></div><div class="info-2"><div class="info-item-1">ThinkingThinking 1.1 在阅读 附录中的编译链接详解 以及本章内容后，尝试分别使用实验环境中的原生 x86 工具链（gcc、ld、readelf、objdump 等）和 MIPS 交叉编译工具链（带有mips-linux-gnu- 前缀，如 mips-linux-gnu-gcc、mips-linux-gnu-ld），重复其中的编译和解析过程，观察相应的结果  12345678910111213141516171819202122232425262728//gcc -E后的结果，输出太长只保留了一部分typedef unsigned char __u_char;typedef unsigned short int __u_short;typedef unsigned int __u_int;typedef unsigned long int __u_long;typedef signed char __int8_t;typedef unsigned char __uint8_t;typedef signed short int __int16_t;typedef ...</div></div></div></a><a class="pagination-related" href="/2026/07/11/OS-lab6/" title="OS-lab6实验报告"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-11</div><div class="info-item-2">OS-lab6实验报告</div></div><div class="info-2"><div class="info-item-1">ThinkingThinking 6.1管道是单向通信的，每个进程只应使用一端。如果不关闭另一端，会导致：  读端进程：如果它仍持有写端文件描述符，那么当写端进程关闭写端后，读端进程的写端仍然存在，管道不会产生 EOF（文件结束符），read 会一直阻塞等待数据或写端全部关闭，造成逻辑错误。 写端进程：如果它仍持有读端，那么当读端关闭后，写进程可能收到 SIGPIPE 信号或 write 返回错误，但更常见的是资源浪费。 资源泄漏：每个文件描述符占用内核资源，不关闭会导致进程的 fd 表逐渐耗尽。  所以，必须显式关闭不需要的一端，否则管道无法正常终止，甚至导致死锁。 Thinking 6.2将原代码中的父子进程角色互换：  父进程：关闭 fd[1]（写端），执行 read。 子进程：关闭 fd[0]（读端），执行 write。  1234567// 父进程close(fd[1]);read(fd[0], buf, 100);// 子进程close(fd[0]);write(fd[1], &quot;Hello world\n&quot;, 12);  Thinking 6.3 ...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">AddCloud</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">17</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">3</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">1</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BF%AE%E6%94%B9%E5%86%85%E5%AE%B9"><span class="toc-number">1.</span> <span class="toc-text">修改内容</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%8A%B6%E6%80%81%E6%89%A9%E5%B1%95"><span class="toc-number">1.1.</span> <span class="toc-text">1. 数据结构与状态扩展</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E7%BA%BF%E7%A8%8B%E5%88%9B%E5%BB%BA%E4%B8%8E%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="toc-number">1.2.</span> <span class="toc-text">2. 线程创建与初始化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%86%85%E6%A0%B8%E6%94%AF%E6%8C%81"><span class="toc-number">1.2.1.</span> <span class="toc-text">内核支持</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8-sys-create-thread"><span class="toc-number">1.2.2.</span> <span class="toc-text">系统调用 sys_create_thread</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%94%A8%E6%88%B7%E5%BA%93%E5%B0%81%E8%A3%85"><span class="toc-number">1.2.3.</span> <span class="toc-text">用户库封装</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E7%BA%BF%E7%A8%8B%E9%80%80%E5%87%BA%E4%B8%8E%E7%AD%89%E5%BE%85"><span class="toc-number">1.3.</span> <span class="toc-text">3. 线程退出与等待</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%80%80%E5%87%BA%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8-sys-exit"><span class="toc-number">1.3.1.</span> <span class="toc-text">退出系统调用 sys_exit</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AD%89%E5%BE%85%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8-sys-wait"><span class="toc-number">1.3.2.</span> <span class="toc-text">等待系统调用 sys_wait</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E5%85%B1%E4%BA%AB%E8%B5%84%E6%BA%90%E7%AE%A1%E7%90%86%E4%B8%8E%E9%87%8A%E6%94%BE"><span class="toc-number">1.4.</span> <span class="toc-text">4. 共享资源管理与释放</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-Futex-%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8"><span class="toc-number">1.5.</span> <span class="toc-text">5. Futex 系统调用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-%E7%94%A8%E6%88%B7%E6%80%81%E4%BA%92%E6%96%A5%E9%94%81"><span class="toc-number">1.6.</span> <span class="toc-text">6. 用户态互斥锁</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-%E5%85%B3%E9%94%AE%E9%97%AE%E9%A2%98%E8%A7%A3%E5%86%B3"><span class="toc-number">1.7.</span> <span class="toc-text">7. 关键问题解决</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Thinking"><span class="toc-number">2.</span> <span class="toc-text">Thinking</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Thinking-1"><span class="toc-number">2.1.</span> <span class="toc-text">Thinking 1</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Thinking-2"><span class="toc-number">2.2.</span> <span class="toc-text">Thinking 2</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Thinking-3"><span class="toc-number">2.3.</span> <span class="toc-text">Thinking 3</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Thinking-4"><span class="toc-number">2.4.</span> <span class="toc-text">Thinking 4</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Thinking-5"><span class="toc-number">2.5.</span> <span class="toc-text">Thinking 5</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Thinking-6"><span class="toc-number">2.6.</span> <span class="toc-text">Thinking 6</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Thinking-7"><span class="toc-number">2.7.</span> <span class="toc-text">Thinking 7</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Thinking-8"><span class="toc-number">2.8.</span> <span class="toc-text">Thinking 8</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P4/" title="P4-Verilog单周期CPU">P4-Verilog单周期CPU</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P3/" title="P3-Logisim单周期CPU">P3-Logisim单周期CPU</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P7/" title="P7-异常中断和外设">P7-异常中断和外设</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/CO-P6/" title="P6-新增功能">P6-新增功能</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/OO-U1/" title="OO-U1总结">OO-U1总结</a><time datetime="2026-07-11T10:10:51.000Z" title="发表于 2026-07-11 18:10:51">2026-07-11</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By AddCloud</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"></div><style>
+/* ===== 整体背景 ===== */
+body {
+  background: #FDF5F5 !important;
+  background-image: url('https://cdn.jsdelivr.net/gh/addcloud330/blog-images/img/bg.png') !important;
+  background-size: cover !important;
+  background-attachment: fixed !important;
+  background-position: center center !important;
+  background-repeat: no-repeat center;
+}
+/* ===== 针对手机竖屏，重新定位左侧人物 ===== */
+@media screen and (max-width: 768px) {
+  body {
+    /* 调整这个百分比，直到人物脸部完全显示 */
+    background-position: 20% 50% !important;
+  }
+}
+/* ===== 毛玻璃卡片效果 ===== */
+#recent-posts > .recent-post-item,
+.layout > .recent-posts > .recent-post-item,
+.layout > div:not(.recent-posts) {
+  background: rgba(255, 248, 248, 0.55) !important;
+  backdrop-filter: blur(12px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(1.4) !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 8px 32px rgba(200, 160, 180, 0.18) !important;
+  transition: all 0.4s ease !important;
+}
+#recent-posts > .recent-post-item:hover,
+.layout > div:not(.recent-posts):hover {
+  background: rgba(255, 248, 248, 0.70) !important;
+  box-shadow: 0 12px 48px rgba(200, 160, 180, 0.28) !important;
+  transform: translateY(-2px) !important;
+}
+/* ===== 标题文字风格 ===== */
+#site-title {
+  font-family: 'Georgia', 'Noto Serif SC', serif !important;
+  font-weight: 300 !important;
+  letter-spacing: 6px !important;
+  color: #F5E0E0 !important;
+  text-shadow: 0 2px 20px rgba(200, 150, 160, 0.5) !important;
+}
+#site-subtitle {
+  font-family: 'Georgia', 'Noto Serif SC', serif !important;
+  font-weight: 200 !important;
+  letter-spacing: 8px !important;
+  color: rgba(255, 240, 240, 0.85) !important;
+  text-shadow: 0 2px 16px rgba(180, 140, 150, 0.4) !important;
+}
+/* ===== 文章标题 ===== */
+.post-title {
+  font-family: 'Georgia', 'Noto Serif SC', serif !important;
+  font-weight: 400 !important;
+  letter-spacing: 2px !important;
+}
+.post-meta {
+  color: #C8A8B0 !important;
+  font-size: 14px !important;
+}
+/* ===== 链接颜色 ===== */
+a {
+  color: #D4A0A8 !important;
+  transition: color 0.3s ease !important;
+}
+a:hover {
+  color: #E8B0B8 !important;
+}
+/* ===== 侧边栏头像 ===== */
+.avatar-img {
+  border: 3px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 4px 24px rgba(200, 160, 180, 0.3) !important;
+}
+/* ===== 滚动条（浅粉） ===== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 245, 245, 0.6);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #F5C4C4;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E8B0B0;
+}
+/* ===== 选中文字颜色 ===== */
+::selection {
+  background: #F5C4C4 !important;
+  color: #FFFFFF !important;
+}
+/* ===== 顶部导航栏透明毛玻璃 ===== */
+#nav {
+  background: rgba(255, 248, 248, 0.35) !important;
+  backdrop-filter: blur(16px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.4) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 2px 24px rgba(200, 160, 180, 0.08) !important;
+}
+#nav .site-page {
+  color: #F5E8E8 !important;
+  text-shadow: 0 1px 8px rgba(180, 140, 150, 0.3) !important;
+}
+#nav .site-page:hover {
+  color: #FFFFFF !important;
+}
+/* ===== 页脚 ===== */
+#footer {
+  background: rgba(255, 248, 248, 0.30) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #E8D0D0 !important;
+  text-shadow: 0 1px 8px rgba(180, 140, 150, 0.2) !important;
+}
+#footer a {
+  color: #E8C8C8 !important;
+}
+#footer a:hover {
+  color: #F5E0E0 !important;
+}
+/* ===== 代码块圆角柔和 ===== */
+.highlight {
+  border-radius: 16px !important;
+  box-shadow: 0 4px 20px rgba(200, 160, 180, 0.10) !important;
+}
+/* ===== 首页标题区域透明 ===== */
+#page-header, 
+#page-header:before,
+.page-header,
+.not-home-page #page-header,
+.post #page-header {
+  background-image: none !important;          /* 关键：去掉图片 */
+  background: transparent !important;         /* 清除所有背景 */
+  background-color: transparent !important;   /* 确保颜色透明 */
+}
+/* ===== 右侧边栏 "Follow Me" 按钮 ===== */
+.author-info__sayhi .btn,
+#aside-content .card_author .btn {
+  background: rgba(245, 196, 196, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  color: #FFFFFF !important;
+  border-radius: 30px !important;
+  backdrop-filter: blur(4px) !important;
+  box-shadow: 0 2px 12px rgba(200, 160, 180, 0.2) !important;
+  transition: all 0.4s ease !important;
+}
+.author-info__sayhi .btn:hover,
+#aside-content .card_author .btn:hover {
+  background: rgba(245, 196, 196, 0.95) !important;
+  transform: scale(1.04) !important;
+  box-shadow: 0 4px 20px rgba(200, 160, 180, 0.4) !important;
+}
+/* ===== 按钮风格 ===== */
+.btn-beautify {
+  background: rgba(245, 196, 196, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 30px !important;
+  backdrop-filter: blur(4px) !important;
+  color: #FFFFFF !important;
+}
+.btn-beautify:hover {
+  background: rgba(245, 196, 196, 0.85) !important;
+  transform: scale(1.02) !important;
+}
+</style>
+<script>
+(function() {
+  const count = 25;                    // 花瓣数量（减少）
+  const container = document.body;
+  const petalImg = '/img/petal.png';   // 你的单瓣图片路径
+
+  // 注入动画关键帧
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes petalFall {
+      0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.9; }
+      100% { transform: translateY(${window.innerHeight + 120}px) rotate(720deg) scale(0.5); opacity: 0.1; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  function createPetal(index) {
+    const petal = document.createElement('img');
+    // 均匀分布：把 0~100% 分成 count 份，每份的中心点，加上随机偏移 ±4%
+    const baseLeft = (index / count) * 100;
+    const randomOffset = (Math.random() - 0.5) * 8; // -4% ~ +4%
+    const left = Math.min(100, Math.max(0, baseLeft + randomOffset)); // 限制范围
+
+    const size = 22 + Math.random() * 18;     // 22~40px（保持适中）
+    const duration = 12 + Math.random() * 14; // 12~26 秒（更慢）
+    const delay = Math.random() * 10;         // 0~10 秒延迟（更分散）
+    const rotation = Math.random() * 360;
+
+    petal.src = petalImg;
+    petal.style.cssText = `
+      position: fixed;
+      top: -30px;
+      left: ${left}%;
+      width: ${size}px;
+      height: auto;
+      pointer-events: none;
+      z-index: 99999;
+      transform: rotate(${rotation}deg);
+      animation: petalFall ${duration}s linear ${delay}s infinite;
+      opacity: 0.85;
+    `;
+    container.appendChild(petal);
+  }
+
+  // 生成花瓣（按顺序生成，位置均匀分布）
+  for (let i = 0; i < count; i++) {
+    createPetal(i);
+  }
+
+  // 窗口大小变化时更新动画终点
+  window.addEventListener('resize', function() {
+    const existingStyle = document.querySelector('style[data-petal]');
+    if (existingStyle) {
+      existingStyle.textContent = `
+        @keyframes petalFall {
+          0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.9; }
+          100% { transform: translateY(${window.innerHeight + 120}px) rotate(720deg) scale(0.5); opacity: 0.1; }
+        }
+      `;
+    }
+  });
+})();
+</script>
+<script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
